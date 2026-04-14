@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, name, email, age, phone, username, points, level, referralCode, referredBy, createdAt
+    //
+    // Collection: orders
+    // Fields: userId, productId, productName, price, uid, transactionId, paymentMethod, status, createdAt
+    //
+    // Collection: points
+    // Fields: userId, amount, reason, createdAt
+    //
+    // Collection: referrals
+    // Fields: referrerId, referredUserId, createdAt
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "mdmasumofficial7@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'age', 'username', 'points', 'level', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             data.email == request.auth.token.email &&
+             data.age >= 18 &&
+             data.points is int &&
+             data.level in ['Silver', 'Bronze', 'Gold', 'Platinum', 'Diamond', 'Crown', 'Elite Crown'];
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'productName', 'price', 'uid', 'transactionId', 'paymentMethod', 'status', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.status == 'processing' &&
+             data.price > 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    request.resource.data.points == resource.data.points && // Prevent self-adding points
+                    request.resource.data.level == resource.data.level;
+      allow update: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /points/{transactionId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      // In a real app, only a cloud function should write this. 
+      // For this demo, we'll allow create if authenticated, but it's a risk.
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.referrerId || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.referredUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

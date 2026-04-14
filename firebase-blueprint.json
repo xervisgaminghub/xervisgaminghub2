@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and account information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "age": { "type": "integer" },
+        "phone": { "type": "string" },
+        "username": { "type": "string" },
+        "points": { "type": "integer" },
+        "level": { "type": "string", "enum": ["Silver", "Bronze", "Gold", "Platinum", "Diamond", "Crown", "Elite Crown"] },
+        "referralCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "age", "username", "points", "level", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Purchase records for top-ups",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "price": { "type": "number" },
+        "uid": { "type": "string", "description": "Game UID" },
+        "transactionId": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string", "enum": ["processing", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productName", "price", "uid", "transactionId", "paymentMethod", "status", "createdAt"]
+    },
+    "PointTransaction": {
+      "title": "PointTransaction",
+      "description": "History of point earnings and spending",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "integer" },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "reason", "createdAt"]
+    },
+    "Referral": {
+      "title": "Referral",
+      "description": "Referral tracking",
+      "type": "object",
+      "properties": {
+        "referrerId": { "type": "string" },
+        "referredUserId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referrerId", "referredUserId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Top-up order documents"
+    },
+    "/points/{transactionId}": {
+      "schema": "PointTransaction",
+      "description": "Point history logs"
+    },
+    "/referrals/{referralId}": {
+      "schema": "Referral",
+      "description": "Referral relationship records"
+    }
+  }
+}
