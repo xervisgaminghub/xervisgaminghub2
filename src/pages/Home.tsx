@@ -1,15 +1,44 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Zap, Trophy, Users, History, Gift, Play, Newspaper, ExternalLink, Calendar, User as UserIcon } from 'lucide-react';
+import { Zap, Trophy, Users, History, Gift, Play, Newspaper, ExternalLink, Calendar, User as UserIcon, Wallet } from 'lucide-react';
 import YouTubeIndicator from '../components/ui/YouTubeIndicator';
 import AdBanner from '../components/ui/AdBanner';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { UserProfile } from '../types';
+import { db } from '../lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
-export default function Home() {
+interface HomeProps {
+  user: UserProfile | null;
+}
+
+export default function Home({ user }: HomeProps) {
   const [news, setNews] = useState<any[]>([]);
+  const [stats, setStats] = useState({ purchases: 0, referrals: 0 });
 
   useEffect(() => {
+    const fetchStats = async () => {
+      if (user) {
+        try {
+          // Fetch purchases count
+          const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.uid));
+          const ordersSnap = await getDocs(ordersQuery);
+          
+          // Fetch referrals count
+          const referralsQuery = query(collection(db, 'users'), where('referredBy', '==', user.referralCode));
+          const referralsSnap = await getDocs(referralsQuery);
+
+          setStats({
+            purchases: ordersSnap.size,
+            referrals: referralsSnap.size
+          });
+        } catch (error) {
+          console.error("Error fetching stats:", error);
+        }
+      }
+    };
+
     const fetchNews = async () => {
       try {
         const response = await axios.get('/api/news?q=gaming+esports&sortBy=publishedAt');
@@ -18,8 +47,13 @@ export default function Home() {
         console.error("Error fetching news:", error);
       }
     };
+
     fetchNews();
-  }, []);
+    fetchStats();
+  }, [user]);
+
+  const xpProgress = user ? (user.points % 1000) : 0;
+  const xpPercentage = (xpProgress / 1000) * 100;
 
   return (
     <div className="max-w-[1024px] mx-auto p-5 grid grid-cols-1 lg:grid-cols-[660px_1fr] gap-5">
@@ -69,16 +103,16 @@ export default function Home() {
         {/* Stat Panel */}
         <div className="stat-panel">
           <div className="flex justify-between mb-4">
-            <StatBox value="42" label="Purchases" />
-            <StatBox value="15" label="Referrals" />
-            <StatBox value="৳ 245" label="Balance" />
+            <StatBox value={user ? stats.purchases.toString() : "0"} label="Purchases" />
+            <StatBox value={user ? stats.referrals.toString() : "0"} label="Referrals" />
+            <StatBox value={user ? `৳ ${Math.floor(user.points / 10)}` : "৳ 0"} label="Balance" />
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden mb-2">
-            <div className="bg-cyan h-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" style={{ width: '75%' }}></div>
+            <div className="bg-cyan h-full shadow-[0_0_10px_rgba(0,255,255,0.5)]" style={{ width: `${user ? xpPercentage : 0}%` }}></div>
           </div>
           <div className="flex justify-between text-[10px] opacity-60 font-bold uppercase tracking-widest">
             <span>Level Progress</span>
-            <span>750 / 1000 XP</span>
+            <span>{user ? xpProgress : 0} / 1000 XP</span>
           </div>
         </div>
 

@@ -55,7 +55,7 @@ export default function App() {
         <Navbar user={user} />
         <main className="flex-grow">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home user={user} />} />
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
             <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
             <Route path="/dashboard" element={user ? <Dashboard user={user} /> : <Navigate to="/login" />} />

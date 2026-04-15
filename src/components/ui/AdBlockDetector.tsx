@@ -6,13 +6,49 @@ export default function AdBlockDetector() {
 
   useEffect(() => {
     const checkAdBlock = async () => {
+      // Method 1: Fetch check
+      let adBlockEnabled = false;
       try {
-        const response = await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
+        await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
           method: 'HEAD',
-          mode: 'no-cors'
+          mode: 'no-cors',
+          cache: 'no-store'
         });
       } catch (error) {
+        adBlockEnabled = true;
+      }
+
+      // Method 2: Bait element check
+      if (!adBlockEnabled) {
+        const bait = document.createElement('div');
+        bait.innerHTML = '&nbsp;';
+        bait.className = 'adsbox ad-unit ad-zone ad-space ad-container';
+        bait.style.position = 'absolute';
+        bait.style.top = '-1000px';
+        bait.style.left = '-1000px';
+        document.body.appendChild(bait);
+
+        setTimeout(() => {
+          if (bait.offsetHeight === 0 || bait.offsetWidth === 0 || window.getComputedStyle(bait).display === 'none' || window.getComputedStyle(bait).visibility === 'hidden') {
+            setIsDetected(true);
+          }
+          document.body.removeChild(bait);
+        }, 100);
+      } else {
         setIsDetected(true);
+      }
+
+      // Method 3: Script load check
+      if (!adBlockEnabled) {
+        const script = document.createElement('script');
+        script.src = 'https://www.google-analytics.com/analytics.js';
+        script.onerror = () => setIsDetected(true);
+        document.head.appendChild(script);
+        setTimeout(() => {
+          if (document.head.contains(script)) {
+            document.head.removeChild(script);
+          }
+        }, 1000);
       }
     };
 

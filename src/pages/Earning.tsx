@@ -98,25 +98,57 @@ export default function Earning({ user }: EarningProps) {
       <div className="mt-16 glass p-12 rounded-3xl border-white/5">
         <h3 className="text-2xl font-black mb-8 text-center uppercase tracking-tighter">Redemption <span className="text-cyan">Tiers</span></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <RewardTier points={200} reward="10 BDT Voucher" />
-          <RewardTier points={500} reward="20 BDT Voucher" />
-          <RewardTier points={1000} reward="100 BDT Cash (bKash)" />
+          <RewardTier points={200} reward="10 BDT Voucher" user={user} />
+          <RewardTier points={500} reward="20 BDT Voucher" user={user} />
+          <RewardTier points={1000} reward="100 BDT Cash (bKash)" user={user} />
         </div>
       </div>
     </div>
   );
 }
 
-function RewardTier({ points, reward }: { points: number, reward: string }) {
+function RewardTier({ points, reward, user }: { points: number, reward: string, user: UserProfile | null }) {
+  const canRedeem = user && user.points >= points;
+
+  const handleRedeem = async () => {
+    if (!user) return;
+    if (user.points < points) {
+      toast.error("Not enough points!");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        points: increment(-points)
+      });
+      toast.success(`Successfully redeemed ${reward}!`);
+    } catch (error) {
+      toast.error("Redemption failed. Please try again.");
+    }
+  };
+
   return (
-    <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex items-center space-x-4">
-      <div className="w-12 h-12 bg-cyan/20 rounded-xl flex items-center justify-center">
-        <Gift className="w-6 h-6 text-cyan" />
+    <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex flex-col gap-4">
+      <div className="flex items-center space-x-4">
+        <div className="w-12 h-12 bg-cyan/20 rounded-xl flex items-center justify-center">
+          <Gift className="w-6 h-6 text-cyan" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{points} Points</p>
+          <p className="font-bold">{reward}</p>
+        </div>
       </div>
-      <div>
-        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{points} Points</p>
-        <p className="font-bold">{reward}</p>
-      </div>
+      <button 
+        onClick={handleRedeem}
+        disabled={!canRedeem}
+        className={`w-full py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${
+          canRedeem 
+            ? 'bg-cyan text-dark hover:bg-white shadow-[0_0_15px_rgba(0,255,255,0.3)]' 
+            : 'bg-white/5 text-gray-600 cursor-not-allowed'
+        }`}
+      >
+        {canRedeem ? 'Redeem Now' : 'Insufficient Points'}
+      </button>
     </div>
   );
 }
