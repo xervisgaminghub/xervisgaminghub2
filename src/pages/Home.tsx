@@ -45,7 +45,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="absolute bottom-5 right-5">
+          <div className="absolute top-5 right-5 z-20">
             <YouTubeIndicator />
           </div>
         </div>
