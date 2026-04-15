@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Zap, Trophy, Users, History, Gift, Play, Newspaper, ExternalLink, Calendar, User as UserIcon } from 'lucide-react';
 import YouTubeIndicator from '../components/ui/YouTubeIndicator';
+import AdBanner from '../components/ui/AdBanner';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -49,6 +50,8 @@ export default function Home() {
             <YouTubeIndicator />
           </div>
         </div>
+
+        <AdBanner />
 
         {/* Shop Grid Preview */}
         <div className="grid grid-cols-3 gap-4">
