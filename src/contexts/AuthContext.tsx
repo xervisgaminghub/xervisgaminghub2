@@ -20,7 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let unsubSnapshot: (() => void) | null = null;
-    let loadingTimeout: any = null;
 
     const unsubscribe = onAuthStateChanged(auth, (fUser) => {
       // Clean up previous snapshot if it exists
@@ -33,38 +32,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (fUser) {
         setLoading(true);
-        // Safety timeout to prevent infinite hanging load
-        loadingTimeout = setTimeout(() => {
-          setLoading(false);
-          console.warn("AuthContext: Profile fetch timed out. Proceeding without profile.");
-        }, 10000);
-
         // Use onSnapshot for real-time user profile updates
         const userDocRef = doc(db, 'users', fUser.uid);
         unsubSnapshot = onSnapshot(userDocRef, (docSnap) => {
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout);
-            loadingTimeout = null;
-          }
-
           if (docSnap.exists()) {
             setUser(docSnap.data() as UserProfile);
           } else {
-            console.warn(`AuthContext: User profile not found for UID: ${fUser.uid}`);
             setUser(null);
           }
           setLoading(false);
         }, (error) => {
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout);
-            loadingTimeout = null;
-          }
           console.error("AuthContext Snapshot Error:", error);
           setLoading(false);
         });
       } else {
         setUser(null);
-        setFirebaseUser(null);
         setLoading(false);
       }
     });
@@ -72,7 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       unsubscribe();
       if (unsubSnapshot) unsubSnapshot();
-      if (loadingTimeout) clearTimeout(loadingTimeout);
     };
   }, []);
 

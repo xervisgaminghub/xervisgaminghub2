@@ -7,16 +7,18 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, firebaseUser, loading } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return <LoadingScreen />;
   }
 
-  // Allow access if firebase user exists but profile is still missing (e.g. just signed up)
-  // This prevents infinite loops of redirects to login for authenticated users without profiles yet
-  if (!firebaseUser && !user) {
+  if (!user) {
+    // Redirect them to the /login page, but save the current location they were
+    // trying to go to when they were redirected. This allows us to send them
+    // along to that page after they login, which is a nicer user experience
+    // than dropping them off on the home page.
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
