@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
-import { Gamepad2, Mail, Lock, User, Phone, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, Phone, CheckCircle2, Users } from 'lucide-react';
 import { generateGamingUsername } from '../services/geminiService';
 import { sendUserDataToSheet } from '../services/webhookService';
 
@@ -17,6 +17,7 @@ export default function Signup() {
     password: '',
     age: '',
     phone: '',
+    referralCode: '',
     confirm18: false,
     acceptTerms: false
   });
@@ -35,6 +36,26 @@ export default function Signup() {
 
     setLoading(true);
     try {
+      let referrerUid = null;
+      let referrerCode = null;
+
+      // Validate Referral Code if provided
+      if (formData.referralCode.trim()) {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('referralCode', '==', formData.referralCode.trim().toUpperCase()));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          toast.error("Invalid referral code.");
+          setLoading(false);
+          return;
+        }
+        
+        const referrerDoc = querySnapshot.docs[0];
+        referrerUid = referrerDoc.id;
+        referrerCode = formData.referralCode.trim().toUpperCase();
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
@@ -48,16 +69,32 @@ export default function Signup() {
         age: parseInt(formData.age),
         phone: formData.phone,
         username: username,
-        points: 10, // New user bonus
+        points: referrerUid ? 20 : 10, // 10 Base + 10 Referral bonus if referred
         level: 'Silver',
         referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        referredBy: referrerCode || null,
+        referralCount: 0,
         createdAt: new Date().toISOString()
       };
 
       await setDoc(doc(db, 'users', user.uid), userData);
+
+      // Reward Referrer
+      if (referrerUid) {
+        await updateDoc(doc(db, 'users', referrerUid), {
+          points: increment(20),
+          referralCount: increment(1)
+        });
+      }
+
       await sendUserDataToSheet(userData);
 
-      toast.success(`Welcome to the Hub, ${username}!`);
+      if (referrerCode) {
+        toast.success(`Welcome to the Hub, ${username}! Referral applied: +10 Bonus Points!`);
+      } else {
+        toast.success(`Welcome to the Hub, ${username}!`);
+      }
+      
       navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message);
@@ -116,8 +153,13 @@ export default function Signup() {
         className="relative z-10 w-full max-w-md glass p-8 rounded-3xl border-cyan/20"
       >
         <div className="text-center mb-8">
-          <Gamepad2 className="w-12 h-12 text-cyan mx-auto mb-4" />
-          <h2 className="text-3xl font-black tracking-tighter">CREATE ACCOUNT</h2>
+          <img 
+            src="https://lh3.googleusercontent.com/d/1ETwW87GvcSFzBMdin6jdJB4Npnyz4MYM" 
+            alt="Xervis Gaming Logo" 
+            className="h-24 w-auto mx-auto mb-4" 
+            referrerPolicy="no-referrer"
+          />
+          <h2 className="text-3xl font-black tracking-tighter uppercase underline decoration-cyan decoration-4 underline-offset-8">CREATE ACCOUNT</h2>
           <p className="text-gray-400 text-sm mt-2">Join the elite gaming community</p>
         </div>
 
@@ -179,6 +221,17 @@ export default function Signup() {
                 onChange={e => setFormData({...formData, phone: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="relative">
+            <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+            <input 
+              type="text" 
+              placeholder="Referral Code (Optional)" 
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-cyan outline-none transition-all uppercase"
+              value={formData.referralCode}
+              onChange={e => setFormData({...formData, referralCode: e.target.value})}
+            />
           </div>
 
           <div className="space-y-3 pt-2">

@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../../types';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
-import { Gamepad2, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 interface NavbarProps {
   user: UserProfile | null;
@@ -21,11 +21,13 @@ export default function Navbar({ user }: NavbarProps) {
 
   return (
     <nav className="sticky top-0 z-40 h-20 px-8 flex items-center justify-between border-b border-cyan/20 bg-gradient-to-b from-cyan/5 to-transparent backdrop-blur-md">
-      <Link to="/" className="flex items-center space-x-2">
-        <Gamepad2 className="w-8 h-8 text-cyan" />
-        <span className="text-2xl font-black tracking-tighter uppercase">
-          XERVIS <span className="text-cyan drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]">GAMING HUB</span>
-        </span>
+      <Link to="/" className="flex items-center">
+        <img 
+          src="https://lh3.googleusercontent.com/d/1ETwW87GvcSFzBMdin6jdJB4Npnyz4MYM" 
+          alt="Xervis Gaming Logo" 
+          className="h-16 w-auto" 
+          referrerPolicy="no-referrer"
+        />
       </Link>
 
       <div className="hidden md:flex items-center space-x-8">
