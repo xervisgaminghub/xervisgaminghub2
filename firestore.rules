@@ -63,11 +63,24 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      // Allow any authenticated user to read profiles (needed for referral search and leaderboard)
+      allow read: if isAuthenticated();
+      
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
-                    request.resource.data.points == resource.data.points && // Prevent self-adding points
-                    request.resource.data.level == resource.data.level;
+      
+      // Update rule for owner
+      allow update: if isOwner(userId) && 
+                    isValidUser(request.resource.data) && 
+                    request.resource.data.points == resource.data.points && 
+                    request.resource.data.level == resource.data.level &&
+                    (!('referralCount' in resource.data) || request.resource.data.referralCount == resource.data.referralCount);
+      
+      // Update rule for referral rewards (allowing non-owners to increment points/referralCount)
+      allow update: if isAuthenticated() && 
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points', 'referralCount']) &&
+                    request.resource.data.points == resource.data.points + 20 &&
+                    request.resource.data.referralCount == (resource.data.get('referralCount', 0) + 1);
+
       allow update: if isAdmin();
     }
 

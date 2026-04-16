@@ -36,28 +36,26 @@ export default function Signup() {
 
     setLoading(true);
     try {
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
       let referrerUid = null;
       let referrerCode = null;
 
-      // Validate Referral Code if provided
+      // Validate Referral Code if provided - NOW AFTER AUTH to have permissions
       if (formData.referralCode.trim()) {
         const usersRef = collection(db, 'users');
         const q = query(usersRef, where('referralCode', '==', formData.referralCode.trim().toUpperCase()));
         const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-          toast.error("Invalid referral code.");
-          setLoading(false);
-          return;
+        if (!querySnapshot.empty) {
+          const referrerDoc = querySnapshot.docs[0];
+          referrerUid = referrerDoc.id;
+          referrerCode = formData.referralCode.trim().toUpperCase();
+        } else {
+          toast.warning("Invalid referral code. Proceeding with regular signup.");
         }
-        
-        const referrerDoc = querySnapshot.docs[0];
-        referrerUid = referrerDoc.id;
-        referrerCode = formData.referralCode.trim().toUpperCase();
       }
-
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
 
       // Generate AI Username
       const username = await generateGamingUsername(formData.name);
@@ -81,10 +79,15 @@ export default function Signup() {
 
       // Reward Referrer
       if (referrerUid) {
-        await updateDoc(doc(db, 'users', referrerUid), {
-          points: increment(20),
-          referralCount: increment(1)
-        });
+        try {
+          await updateDoc(doc(db, 'users', referrerUid), {
+            points: increment(20),
+            referralCount: increment(1)
+          });
+        } catch (updateErr) {
+          console.error("Failed to reward referrer:", updateErr);
+          // Don't fail the whole signup if referrer update fails
+        }
       }
 
       await sendUserDataToSheet(userData);
