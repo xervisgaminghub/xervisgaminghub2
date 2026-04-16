@@ -1,7 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../../types';
-import { auth } from '../../lib/firebase';
-import { signOut } from 'firebase/auth';
+import { useAuth } from '../../contexts/AuthContext';
 import { LogOut } from 'lucide-react';
 
 interface NavbarProps {
@@ -9,12 +8,17 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user }: NavbarProps) {
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/');
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const isActive = (path: string) => location.pathname === path;

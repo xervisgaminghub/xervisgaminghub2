@@ -1,10 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from './lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { UserProfile } from './types';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Pages
 import Home from './pages/Home';
@@ -24,52 +20,51 @@ import AnnouncementBar from './components/layout/AnnouncementBar';
 import WhatsAppButton from './components/layout/WhatsAppButton';
 import LoadingScreen from './components/ui/LoadingScreen';
 import AdBlockDetector from './components/ui/AdBlockDetector';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 
-export default function App() {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as UserProfile);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+function AppRoutes() {
+  const { user, loading } = useAuth();
 
   if (loading) return <LoadingScreen />;
 
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col">
-        <AdBlockDetector />
-        <AnnouncementBar />
-        <Navbar user={user} />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home user={user} />} />
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
-            <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={user ? <Dashboard user={user} /> : <Navigate to="/login" />} />
-            <Route path="/store" element={<Store user={user} />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/tournament" element={<Tournament />} />
-            <Route path="/earning" element={<Earning user={user} />} />
-          </Routes>
-        </main>
-        <Footer />
-        <WhatsAppButton />
-        <Toaster position="top-center" richColors theme="dark" />
-      </div>
-    </Router>
+    <div className="min-h-screen flex flex-col">
+      <AdBlockDetector />
+      <AnnouncementBar />
+      <Navbar user={user} />
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={<Home user={user} />} />
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard user={user!} /></ProtectedRoute>} />
+          <Route path="/earning" element={<ProtectedRoute><Earning user={user!} /></ProtectedRoute>} />
+          
+          {/* Public Routes */}
+          <Route path="/store" element={<Store user={user} />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/tournament" element={<Tournament />} />
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </main>
+      <Footer />
+      <WhatsAppButton />
+      <Toaster position="top-center" richColors theme="dark" />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 }
