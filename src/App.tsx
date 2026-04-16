@@ -22,6 +22,44 @@ import LoadingScreen from './components/ui/LoadingScreen';
 import AdBlockDetector from './components/ui/AdBlockDetector';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
+import { Component, ErrorInfo, ReactNode } from 'react';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-dark flex items-center justify-center p-4">
+          <div className="glass p-8 rounded-3xl border-red/20 max-w-md text-center">
+            <h1 className="text-2xl text-red mb-4">SYSTEM CRITICAL ERROR</h1>
+            <p className="text-gray-400 mb-6">The Xervis Hub encountered an unexpected error. Please refresh the page.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="btn-neon"
+            >
+              Restart Hub
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function AppRoutes() {
   const { user, loading } = useAuth();
 
@@ -61,10 +99,12 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

@@ -19,14 +19,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubSnapshot: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, (fUser) => {
+      // Clean up previous snapshot if it exists
+      if (unsubSnapshot) {
+        unsubSnapshot();
+        unsubSnapshot = null;
+      }
+
       setFirebaseUser(fUser);
       
       if (fUser) {
         setLoading(true);
         // Use onSnapshot for real-time user profile updates
         const userDocRef = doc(db, 'users', fUser.uid);
-        const unsubDoc = onSnapshot(userDocRef, (docSnap) => {
+        unsubSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setUser(docSnap.data() as UserProfile);
           } else {
@@ -34,18 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setLoading(false);
         }, (error) => {
-          console.error("Error listening to user profile:", error);
+          console.error("AuthContext Snapshot Error:", error);
           setLoading(false);
         });
-
-        return () => unsubDoc();
       } else {
         setUser(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubSnapshot) unsubSnapshot();
+    };
   }, []);
 
   const logout = async () => {

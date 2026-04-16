@@ -42,9 +42,14 @@ export default function Home({ user }: HomeProps) {
     const fetchNews = async () => {
       try {
         const response = await axios.get('/api/news?q=gaming+esports&sortBy=publishedAt');
-        setNews(response.data.articles.slice(0, 3));
+        if (response.data && response.data.articles) {
+          setNews(response.data.articles.slice(0, 3));
+        } else {
+          setNews([]);
+        }
       } catch (error) {
         console.error("Error fetching news:", error);
+        setNews([]);
       }
     };
 
