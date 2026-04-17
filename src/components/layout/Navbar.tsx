@@ -45,13 +45,13 @@ export default function Navbar({ user }: NavbarProps) {
   return (
     <nav className="sticky top-0 z-50 flex flex-col border-b border-cyan/20 glass-cyan shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
       {/* Top Tier: Logo & Auth */}
-      <div className="h-16 px-4 md:px-8 flex items-center justify-between border-b border-white/5">
+      <div className="h-24 md:h-28 px-4 md:px-8 flex items-center justify-between border-b border-white/5">
         {/* Logo Section */}
         <Link to="/" className="flex items-center shrink-0">
           <img 
             src="https://lh3.googleusercontent.com/d/1ETwW87GvcSFzBMdin6jdJB4Npnyz4MYM" 
             alt="Xervis Gaming Logo" 
-            className="h-10 md:h-12 w-auto transition-transform hover:scale-110 active:scale-95" 
+            className="h-20 md:h-24 w-auto transition-transform hover:scale-110 active:scale-95" 
             referrerPolicy="no-referrer"
           />
         </Link>

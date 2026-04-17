@@ -11,17 +11,17 @@ interface StoreProps {
 }
 
 const PRODUCTS = [
-  { id: 'w-165', name: 'Weekly Membership', price: 165, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/ffw/200/200' },
-  { id: 'm-790', name: 'Monthly Membership', price: 790, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/ffm/200/200' },
-  { id: 'wl-60', name: 'Weekly Lite', price: 60, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/ffwl/200/200' },
-  { id: 'lup-490', name: 'Level Up Pass', price: 490, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/fflup/200/200' },
-  { id: 'd-25', name: '25 Diamonds', price: 25, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd25/200/200' },
-  { id: 'd-50', name: '50 Diamonds', price: 50, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd50/200/200' },
-  { id: 'd-100', name: '100 Diamonds', price: 100, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd100/200/200' },
-  { id: 'd-115', name: '115 Diamonds', price: 115, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd115/200/200' },
-  { id: 'd-240', name: '240 Diamonds', price: 240, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd240/200/200' },
-  { id: 'd-355', name: '355 Diamonds', price: 355, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd355/200/200' },
-  { id: 'd-505', name: '505 Diamonds', price: 505, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd505/200/200' },
+  { id: 'ff-weekly', name: 'Free fire weekly', price: 165, subFolder: 'Free Fire Top up', category: 'Membership' },
+  { id: 'ff-weekly-lite', name: 'Free Fire Weekly Lite', price: 60, subFolder: 'Free Fire Top up', category: 'Membership' },
+  { id: 'ff-monthly', name: 'Free Fire Monthly', price: 790, subFolder: 'Free Fire Top up', category: 'Membership' },
+  { id: 'ff-lup', name: 'Free Fire Full level up pass', price: 490, subFolder: 'Free Fire Top up', category: 'Membership' },
+  { id: 'ff-25d', name: 'Free Fire 25 Diamond', price: 30, subFolder: 'Free Fire Top up', category: 'Diamond' },
+  { id: 'ff-50d', name: 'Free Fire 50 Diamond', price: 45, subFolder: 'Free Fire Top up', category: 'Diamond' },
+  { id: 'ff-100d', name: 'Free Fire 100 Diamond', price: 85, subFolder: 'Free Fire Top up', category: 'Diamond' },
+  { id: 'ff-115d', name: 'Free Fire 115 Diamond', price: 90, subFolder: 'Free Fire Top up', category: 'Diamond' },
+  { id: 'ff-240d', name: 'Free Fire 240 Diamond', price: 170, subFolder: 'Free Fire Top up', category: 'Diamond' },
+  { id: 'ff-355d', name: 'Free Fire 355 Diamonds', price: 250, subFolder: 'Free Fire Top up', category: 'Diamond' },
+  { id: 'ff-505d', name: 'Free Fire 505 Diamonds', price: 370, subFolder: 'Free Fire Top up', category: 'Diamond' },
   { 
     id: 'lunar-file', 
     name: 'Lunar Client File', 
@@ -33,6 +33,18 @@ const PRODUCTS = [
     features: ['⚡ FPS Boost', '🎯 Smooth gameplay', '🧹 Clean HUD', '🔧 Optimized settings', '🌙 Lunar Client compatible'],
     details: 'Version: Latest • Size: Lightweight • Works with most Minecraft versions',
     downloadUrl: 'https://xervisgaminghub.blogspot.com/2026/04/lunar-client-file-download.html'
+  },
+  {
+    id: 'the-king-cheats',
+    name: 'TheKingCheatsSafe_V23',
+    price: 0,
+    subFolder: 'Download File',
+    category: 'File',
+    image: 'https://drive.google.com/thumbnail?id=1xI67S5XL3L4TmcGXSes4nTf1j56H0yzb&sz=w600',
+    description: 'Enhance your gameplay with this optimized and updated cheat/mod file. Designed for smooth performance and better control, it delivers a stable and improved gaming experience.',
+    features: ['⚡ Smooth performance', '🎯 Optimized settings', '🆕 Latest version (V23)', '🎮 Easy to use'],
+    details: 'Version: Latest (V23) • Size: Lightweight • Safe & Tested',
+    downloadUrl: 'https://xervisgaminghub.blogspot.com/2026/04/thekingcheatssafev236.html'
   },
 ];
 
