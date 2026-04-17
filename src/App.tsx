@@ -12,6 +12,7 @@ import Terms from './pages/Terms';
 import Blog from './pages/Blog';
 import Tournament from './pages/Tournament';
 import Earning from './pages/Earning';
+import About from './pages/About';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -85,6 +86,7 @@ function AppRoutes() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/tournament" element={<Tournament />} />
+          <Route path="/about" element={<About />} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
