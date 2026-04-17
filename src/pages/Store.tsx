@@ -22,6 +22,18 @@ const PRODUCTS = [
   { id: 'd-240', name: '240 Diamonds', price: 240, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd240/200/200' },
   { id: 'd-355', name: '355 Diamonds', price: 355, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd355/200/200' },
   { id: 'd-505', name: '505 Diamonds', price: 505, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd505/200/200' },
+  { 
+    id: 'lunar-file', 
+    name: 'Lunar Client File', 
+    price: 0, 
+    subFolder: 'Download File', 
+    category: 'File', 
+    image: 'https://drive.google.com/uc?export=view&id=16Mkvo_fhBqNS73rxUyaPOw7vIHKdP6n2',
+    description: 'Lunar Client Optimized Mod File. Boost your Minecraft gameplay with smoother performance, higher FPS, and a clean interface using this optimized Lunar Client config.',
+    features: ['⚡ FPS Boost', '🎯 Smooth gameplay', '🧹 Clean HUD', '🔧 Optimized settings', '🌙 Lunar Client compatible'],
+    details: 'Version: Latest • Size: Lightweight • Works with most Minecraft versions',
+    downloadUrl: 'https://xervisgaminghub.blogspot.com/2026/04/lunar-client-file-download.html'
+  },
 ];
 
 const SUB_FOLDERS = [
@@ -143,11 +155,11 @@ export default function Store({ user }: StoreProps) {
             />
           </div>
 
-          {activeFolder === 'Download File' ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center py-24 glass rounded-3xl border-dashed border-white/10">
               <Download className="w-16 h-16 text-gray-700 mx-auto mb-4 opacity-20" />
-              <h3 className="text-xl font-black text-gray-600 uppercase tracking-widest mb-2">No Files Uploaded</h3>
-              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Digital resources are being indexed. Transmission pending.</p>
+              <h3 className="text-xl font-black text-gray-600 uppercase tracking-widest mb-2">No Resources Found</h3>
+              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">No matching items indexed in this sector. Transmission pending.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
@@ -167,8 +179,12 @@ export default function Store({ user }: StoreProps) {
                         : 'border-white/5 hover:border-white/20 bg-white/[0.02]'
                     }`}
                   >
-                    <div className="h-28 bg-black/40 rounded-2xl flex items-center justify-center text-5xl mb-4 group-hover:scale-110 transition-transform duration-500">
-                      {product.category === 'Diamond' ? '💎' : '💳'}
+                    <div className="h-28 bg-black/40 rounded-2xl flex items-center justify-center text-5xl mb-4 group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        product.category === 'Diamond' ? '💎' : '💳'
+                      )}
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest truncate">{product.name}</h3>
@@ -195,7 +211,46 @@ export default function Store({ user }: StoreProps) {
             </h3>
 
             {selectedProduct ? (
-              <form onSubmit={handleOrder} className="space-y-4">
+              selectedProduct.subFolder === 'Download File' ? (
+                <div className="space-y-6">
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Resource Index</p>
+                    <p className="font-bold text-cyan text-lg">{selectedProduct.name}</p>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">{(selectedProduct as any).description}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-black">Tactical Features</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {(selectedProduct as any).features?.map((f: string) => (
+                        <div key={f} className="flex items-center space-x-2 text-[10px] text-gray-300 font-bold bg-white/5 p-2 rounded-lg border border-white/5">
+                          <span>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="text-[9px] text-yellow-500 font-black uppercase tracking-widest mb-1 italic">Security Advisory:</p>
+                    <p className="text-[10px] text-gray-400 leading-tight">🛡️ Safe & Tested. ⚠️ Files hosted on third-party servers (MediaFire). Use at own risk.</p>
+                  </div>
+
+                  <a 
+                    href={(selectedProduct as any).downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-neon w-full py-4 flex items-center justify-center space-x-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Now</span>
+                  </a>
+
+                  <p className="text-[9px] text-gray-600 text-center uppercase tracking-[0.2em] font-black italic">
+                    {(selectedProduct as any).details}
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleOrder} className="space-y-4">
                 <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
                   <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Selected Product</p>
                   <p className="font-bold text-cyan">{selectedProduct.name}</p>
@@ -269,7 +324,7 @@ export default function Store({ user }: StoreProps) {
                   Secure Transaction Verification
                 </p>
               </form>
-            ) : (
+            )) : (
               <div className="text-center py-12">
                 <Diamond className="w-12 h-12 text-gray-700 mx-auto mb-4" />
                 <p className="text-gray-500 text-sm">Select a product to start your order.</p>
