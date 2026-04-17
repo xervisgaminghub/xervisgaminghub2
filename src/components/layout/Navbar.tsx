@@ -36,7 +36,7 @@ export default function Navbar({ user }: NavbarProps) {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 h-20 px-4 md:px-8 flex items-center justify-between border-b border-cyan/20 bg-dark/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 h-20 px-4 md:px-8 flex items-center justify-between border-b border-cyan/20 glass-cyan">
       {/* Logo Section */}
       <Link to="/" className="flex items-center shrink-0" onClick={() => setIsMenuOpen(false)}>
         <img 
@@ -116,7 +116,7 @@ export default function Navbar({ user }: NavbarProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-20 right-0 bottom-0 w-[280px] bg-dark border-l border-cyan/20 lg:hidden z-50 p-6 flex flex-col"
+              className="fixed top-20 right-0 bottom-0 w-[280px] border-l border-cyan/20 lg:hidden z-50 p-6 flex flex-col glass-cyan !bg-dark/90"
             >
               {/* User Info in Mobile Menu (Visible only when logged in) */}
               {user && (
