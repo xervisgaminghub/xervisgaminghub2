@@ -9,7 +9,6 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Store from './pages/Store';
 import Terms from './pages/Terms';
-import Blog from './pages/Blog';
 import Tournament from './pages/Tournament';
 import Earning from './pages/Earning';
 import About from './pages/About';
@@ -82,7 +81,6 @@ function AppRoutes() {
           {/* Public Routes */}
           <Route path="/store" element={<Store user={user} />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/blog" element={<Blog />} />
           <Route path="/tournament" element={<Tournament />} />
           <Route path="/about" element={<About />} />
           

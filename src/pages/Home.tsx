@@ -17,7 +17,6 @@ const HUB_LINKS = [
   { name: 'Shop Store', path: '/store', icon: ShoppingBag, color: 'text-yellow-500', desc: 'Premium top-ups & digital goods' },
   { name: 'Earning', path: '/earning', icon: Zap, color: 'text-red', desc: 'Earn points by watching ads & tasks' },
   { name: 'Tournaments', path: '/tournament', icon: Trophy, color: 'text-emerald-500', desc: 'Join esports events & win big' },
-  { name: 'Latest Blog', path: '/blog', icon: Newspaper, color: 'text-blue-500', desc: 'Gaming news & system updates' },
   { name: 'About Us', path: '/about', icon: Info, color: 'text-purple-500', desc: 'Learn about Xervis Hub protocol' },
   { name: 'Legal Terms', path: '/terms', icon: FileText, color: 'text-gray-400', desc: 'User agreements & privacy policy' },
   { name: 'Support', path: '#', icon: MessageSquare, color: 'text-green-500', desc: 'Direct WhatsApp contact with staff', isExternal: true, url: 'https://wa.me/8801961448374' },

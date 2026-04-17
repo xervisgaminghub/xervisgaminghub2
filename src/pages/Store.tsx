@@ -1,31 +1,38 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send } from 'lucide-react';
+import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search } from 'lucide-react';
 
 interface StoreProps {
   user: UserProfile | null;
 }
 
 const PRODUCTS = [
-  { id: 'w-165', name: 'Weekly Membership', price: 165, category: 'Membership', image: 'https://picsum.photos/seed/ffw/200/200' },
-  { id: 'm-790', name: 'Monthly Membership', price: 790, category: 'Membership', image: 'https://picsum.photos/seed/ffm/200/200' },
-  { id: 'wl-60', name: 'Weekly Lite', price: 60, category: 'Membership', image: 'https://picsum.photos/seed/ffwl/200/200' },
-  { id: 'lup-490', name: 'Level Up Pass', price: 490, category: 'Membership', image: 'https://picsum.photos/seed/fflup/200/200' },
-  { id: 'd-25', name: '25 Diamonds', price: 25, category: 'Diamond', image: 'https://picsum.photos/seed/ffd25/200/200' },
-  { id: 'd-50', name: '50 Diamonds', price: 50, category: 'Diamond', image: 'https://picsum.photos/seed/ffd50/200/200' },
-  { id: 'd-100', name: '100 Diamonds', price: 100, category: 'Diamond', image: 'https://picsum.photos/seed/ffd100/200/200' },
-  { id: 'd-115', name: '115 Diamonds', price: 115, category: 'Diamond', image: 'https://picsum.photos/seed/ffd115/200/200' },
-  { id: 'd-240', name: '240 Diamonds', price: 240, category: 'Diamond', image: 'https://picsum.photos/seed/ffd240/200/200' },
-  { id: 'd-355', name: '355 Diamonds', price: 355, category: 'Diamond', image: 'https://picsum.photos/seed/ffd355/200/200' },
-  { id: 'd-505', name: '505 Diamonds', price: 505, category: 'Diamond', image: 'https://picsum.photos/seed/ffd505/200/200' },
+  { id: 'w-165', name: 'Weekly Membership', price: 165, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/ffw/200/200' },
+  { id: 'm-790', name: 'Monthly Membership', price: 790, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/ffm/200/200' },
+  { id: 'wl-60', name: 'Weekly Lite', price: 60, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/ffwl/200/200' },
+  { id: 'lup-490', name: 'Level Up Pass', price: 490, subFolder: 'Free Fire Top up', category: 'Membership', image: 'https://picsum.photos/seed/fflup/200/200' },
+  { id: 'd-25', name: '25 Diamonds', price: 25, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd25/200/200' },
+  { id: 'd-50', name: '50 Diamonds', price: 50, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd50/200/200' },
+  { id: 'd-100', name: '100 Diamonds', price: 100, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd100/200/200' },
+  { id: 'd-115', name: '115 Diamonds', price: 115, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd115/200/200' },
+  { id: 'd-240', name: '240 Diamonds', price: 240, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd240/200/200' },
+  { id: 'd-355', name: '355 Diamonds', price: 355, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd355/200/200' },
+  { id: 'd-505', name: '505 Diamonds', price: 505, subFolder: 'Free Fire Top up', category: 'Diamond', image: 'https://picsum.photos/seed/ffd505/200/200' },
+];
+
+const SUB_FOLDERS = [
+  { name: 'Free Fire Top up', icon: Diamond, color: 'text-cyan' },
+  { name: 'Download File', icon: Download, color: 'text-yellow-500' },
 ];
 
 export default function Store({ user }: StoreProps) {
+  const [activeFolder, setActiveFolder] = useState('Free Fire Top up');
   const [selectedProduct, setSelectedProduct] = useState<typeof PRODUCTS[0] | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [orderData, setOrderData] = useState({
     uid: '',
     name: '',
@@ -76,31 +83,107 @@ export default function Store({ user }: StoreProps) {
     }
   };
 
+  const filteredProducts = PRODUCTS.filter(p => 
+    p.subFolder === activeFolder && 
+    (p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <div className="text-center mb-16">
-        <h1 className="text-5xl font-black mb-4">DIAMOND <span className="neon-text">STORE</span></h1>
-        <p className="text-gray-400 max-w-xl mx-auto">Fastest Free Fire top-up service in Bangladesh. Secure, reliable, and instant.</p>
+      <div className="text-center mb-12">
+        <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase italic">Xervis <span className="text-cyan">Depot</span></h1>
+        <p className="text-gray-400 max-w-xl mx-auto uppercase text-[10px] font-black tracking-[0.3em]">Protocol Sector: Resource Procurement & Distribution</p>
+      </div>
+
+      {/* Folder Navigation */}
+      <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
+        {SUB_FOLDERS.map((folder) => {
+          const Icon = folder.icon;
+          const isActive = activeFolder === folder.name;
+          return (
+            <button
+              key={folder.name}
+              onClick={() => {
+                setActiveFolder(folder.name);
+                setSelectedProduct(null);
+              }}
+              className={`flex items-center space-x-3 px-6 py-4 rounded-2xl border transition-all relative overflow-hidden group ${
+                isActive 
+                  ? 'bg-cyan/10 border-cyan/40 text-cyan shadow-[0_0_25px_rgba(0,255,255,0.1)]' 
+                  : 'bg-white/[0.03] border-white/5 text-gray-500 hover:border-white/20 hover:text-white'
+              }`}
+            >
+              <div className={`p-2 rounded-lg bg-black/40 ${isActive ? folder.color : 'text-gray-600'}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className="font-black uppercase tracking-widest text-xs">{folder.name}</span>
+              {isActive && (
+                <motion.div 
+                  layoutId="active-folder-glow"
+                  className="absolute inset-0 bg-cyan/5 blur-xl -z-10"
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Product List */}
-        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-6">
-          {PRODUCTS.map(product => (
-            <motion.div
-              key={product.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedProduct(product)}
-              className={`glass-cyan p-4 rounded-lg cursor-pointer border transition-all ${selectedProduct?.id === product.id ? 'border-cyan shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'border-cyan/10 hover:border-cyan/30'}`}
-            >
-              <div className="h-24 bg-black/30 rounded flex items-center justify-center text-4xl mb-3">
-                {product.category === 'Diamond' ? '💎' : '💳'}
-              </div>
-              <h3 className="text-[12px] text-gray-400 font-bold truncate mb-1">{product.name}</h3>
-              <p className="text-cyan font-black text-lg">৳ {product.price}</p>
-            </motion.div>
-          ))}
+        <div className="lg:col-span-2">
+          {/* Search Bar */}
+          <div className="relative mb-8">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input 
+              type="text"
+              placeholder={`Search in ${activeFolder}...`}
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 focus:border-cyan/50 outline-none transition-all uppercase text-[10px] font-black tracking-widest"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {activeFolder === 'Download File' ? (
+            <div className="text-center py-24 glass rounded-3xl border-dashed border-white/10">
+              <Download className="w-16 h-16 text-gray-700 mx-auto mb-4 opacity-20" />
+              <h3 className="text-xl font-black text-gray-600 uppercase tracking-widest mb-2">No Files Uploaded</h3>
+              <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Digital resources are being indexed. Transmission pending.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+              <AnimatePresence mode="popLayout">
+                {filteredProducts.map(product => (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    whileHover={{ y: -5 }}
+                    onClick={() => setSelectedProduct(product)}
+                    className={`glass-cyan p-5 rounded-3xl cursor-pointer border transition-all relative overflow-hidden group ${
+                      selectedProduct?.id === product.id 
+                        ? 'border-cyan bg-cyan/5 shadow-[0_0_30px_rgba(0,255,255,0.1)]' 
+                        : 'border-white/5 hover:border-white/20 bg-white/[0.02]'
+                    }`}
+                  >
+                    <div className="h-28 bg-black/40 rounded-2xl flex items-center justify-center text-5xl mb-4 group-hover:scale-110 transition-transform duration-500">
+                      {product.category === 'Diamond' ? '💎' : '💳'}
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest truncate">{product.name}</h3>
+                      <div className="flex items-center justify-between">
+                        <p className="text-cyan font-black text-xl tracking-tighter">৳{product.price}</p>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all ${selectedProduct?.id === product.id ? 'bg-cyan border-cyan text-dark' : 'border-white/10 text-gray-600'}`}>
+                          <ShoppingCart className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         {/* Order Form */}

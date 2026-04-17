@@ -15,7 +15,6 @@ const NAV_LINKS = [
   { name: 'Products', path: '/store', icon: ShoppingBag },
   { name: 'Earning', path: '/earning', icon: Zap },
   { name: 'Tournament', path: '/tournament', icon: Trophy },
-  { name: 'Blog', path: '/blog', icon: Newspaper },
   { name: 'About', path: '/about', icon: Info },
   { name: 'Terms', path: '/terms', icon: FileText },
 ];
