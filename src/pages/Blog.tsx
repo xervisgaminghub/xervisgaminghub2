@@ -10,10 +10,22 @@ export default function Blog() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await axios.get('/api/news?q=gaming+esports&sortBy=publishedAt');
-        setNews(response.data.articles.slice(0, 12));
+        setLoading(true);
+        const response = await axios.get('/api/news', {
+          params: {
+            q: 'gaming esports',
+            sortBy: 'publishedAt'
+          }
+        });
+        
+        if (response.data && response.data.articles) {
+          setNews(response.data.articles.slice(0, 12));
+        } else {
+          setNews([]);
+        }
       } catch (error) {
         console.error("Error fetching news:", error);
+        setNews([]);
       } finally {
         setLoading(false);
       }
@@ -32,8 +44,14 @@ export default function Blog() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="glass aspect-[4/5] rounded-3xl animate-pulse"></div>
+            <div key={i} className="glass aspect-[4/5] rounded-3xl animate-pulse bg-white/5"></div>
           ))}
+        </div>
+      ) : news.length === 0 ? (
+        <div className="text-center py-20 glass rounded-3xl border-white/5">
+          <Newspaper className="w-16 h-16 text-gray-600 mx-auto mb-4 opacity-50" />
+          <h3 className="text-xl font-bold mb-2">No News Hub Active</h3>
+          <p className="text-gray-500 uppercase text-xs font-black tracking-widest">Network connectivity issues with global news sectors. Please check back later.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

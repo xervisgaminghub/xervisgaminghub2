@@ -17,7 +17,6 @@ import About from './pages/About';
 // Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import AnnouncementBar from './components/layout/AnnouncementBar';
 import WhatsAppButton from './components/layout/WhatsAppButton';
 import LoadingScreen from './components/ui/LoadingScreen';
 import AdBlockDetector from './components/ui/AdBlockDetector';
@@ -69,7 +68,6 @@ function AppRoutes() {
   return (
     <div className="min-h-screen flex flex-col">
       <AdBlockDetector />
-      <AnnouncementBar />
       <Navbar user={user} />
       <main className="flex-grow">
         <Routes>

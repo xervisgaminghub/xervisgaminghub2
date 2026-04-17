@@ -20,9 +20,18 @@ async function startServer() {
         params: {
           q,
           sortBy,
-          apiKey
+          apiKey,
+          pageSize: 20,
+          language: 'en'
+        },
+        headers: {
+          'User-Agent': 'XervisGamingHub/1.0'
         }
       });
+      
+      if (response.data.status !== 'ok') {
+        throw new Error(response.data.message || 'NewsAPI error');
+      }
       
       res.json(response.data);
     } catch (error: any) {
