@@ -28,7 +28,7 @@ const PRODUCTS = [
     price: 0, 
     subFolder: 'Download File', 
     category: 'File', 
-    image: 'https://drive.google.com/uc?export=view&id=16Mkvo_fhBqNS73rxUyaPOw7vIHKdP6n2',
+    image: 'https://drive.google.com/thumbnail?id=16Mkvo_fhBqNS73rxUyaPOw7vIHKdP6n2&sz=w600',
     description: 'Lunar Client Optimized Mod File. Boost your Minecraft gameplay with smoother performance, higher FPS, and a clean interface using this optimized Lunar Client config.',
     features: ['⚡ FPS Boost', '🎯 Smooth gameplay', '🧹 Clean HUD', '🔧 Optimized settings', '🌙 Lunar Client compatible'],
     details: 'Version: Latest • Size: Lightweight • Works with most Minecraft versions',
@@ -213,6 +213,16 @@ export default function Store({ user }: StoreProps) {
             {selectedProduct ? (
               selectedProduct.subFolder === 'Download File' ? (
                 <div className="space-y-6">
+                  {selectedProduct.image && (
+                    <div className="aspect-video w-full rounded-2xl bg-black/40 border border-white/5 overflow-hidden">
+                      <img 
+                        src={selectedProduct.image} 
+                        alt={selectedProduct.name} 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
                   <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                     <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Resource Index</p>
                     <p className="font-bold text-cyan text-lg">{selectedProduct.name}</p>
