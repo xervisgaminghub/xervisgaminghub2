@@ -116,7 +116,7 @@ export default function Navbar({ user }: NavbarProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-20 right-0 bottom-0 w-[280px] border-l border-cyan/20 lg:hidden z-50 p-6 flex flex-col glass-cyan !bg-[#0A0A0A]"
+              className="fixed top-20 right-0 bottom-0 w-[280px] bg-dark border-l border-cyan/20 lg:hidden z-50 p-6 flex flex-col shadow-[-20px_0_50px_rgba(0,0,0,0.5)]"
             >
               {/* User Info in Mobile Menu (Visible only when logged in) */}
               {user && (
