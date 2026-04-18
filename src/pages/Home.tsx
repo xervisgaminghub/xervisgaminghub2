@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Zap, Trophy, ShoppingBag, LayoutDashboard, Newspaper, Info, FileText, Home as HomeIcon, MessageSquare, Send, Youtube, Play } from 'lucide-react';
 import YouTubeIndicator from '../components/ui/YouTubeIndicator';
+import BannerAd from '../components/ads/BannerAd';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { UserProfile } from '../types';
@@ -157,6 +158,8 @@ export default function Home({ user }: HomeProps) {
         </div>
       </div>
 
+      <BannerAd />
+
       {/* Navigation Matrix Header */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="h-[2px] flex-grow bg-gradient-to-r from-cyan/50 to-transparent" />
@@ -209,6 +212,8 @@ export default function Home({ user }: HomeProps) {
           </p>
         </div>
       </div>
+
+      <BannerAd />
     </div>
   );
 }
