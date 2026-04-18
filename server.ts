@@ -43,6 +43,23 @@ async function startServer() {
     }
   });
 
+  // YouTube Live Status Check
+  app.get("/api/youtube-live", async (req, res) => {
+    try {
+      const handle = "@xarvis-live";
+      const response = await axios.get(`https://www.youtube.com/${handle}/live`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+        }
+      });
+      // Check for isLiveNow flag in the page source
+      const isLive = response.data.includes('"isLiveNow":true');
+      res.json({ isLive });
+    } catch (error) {
+      res.json({ isLive: false });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

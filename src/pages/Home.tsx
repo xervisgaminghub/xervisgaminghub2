@@ -25,6 +25,22 @@ const HUB_LINKS = [
 export default function Home({ user }: HomeProps) {
   const [news, setNews] = useState<any[]>([]);
   const [stats, setStats] = useState({ purchases: 0, referrals: 0 });
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    const fetchLiveStatus = async () => {
+      try {
+        const res = await fetch('/api/youtube-live');
+        const data = await res.json();
+        setIsLive(data.isLive);
+      } catch (e) {
+        setIsLive(false);
+      }
+    };
+    fetchLiveStatus();
+    const interval = setInterval(fetchLiveStatus, 120000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -178,7 +194,14 @@ export default function Home({ user }: HomeProps) {
         <div className="stat-panel border-white/5 bg-white/[0.02]">
           <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Network Connectivity</h4>
           <div className="space-y-3">
-            <SocialEntry icon={Youtube} label="YouTube Live" sub="Subscribers & Streams" color="text-red" url="https://youtube.com/@xarvis-live" />
+            <SocialLiveEntry 
+              isLive={isLive}
+              icon={Youtube} 
+              label={isLive ? "Xervis Live Now" : "Xervis Offline"} 
+              sub={isLive ? "Click to Watch Stream" : "Currently Offline"} 
+              color="text-red" 
+              url="https://youtube.com/@xarvis-live/live" 
+            />
             <SocialEntry icon={Send} label="Telegram Hub" sub="Daily Codes & Updates" color="text-blue-400" url="https://t.me/xarvis2" />
           </div>
           <p className="mt-8 text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em] leading-relaxed">
@@ -217,6 +240,35 @@ function HubTile({ link, index }: { link: any, index: number }) {
     <a href={link.url} target="_blank" rel="noopener noreferrer">{Content}</a>
   ) : (
     <Link to={link.path}>{Content}</Link>
+  );
+}
+
+function SocialLiveEntry({ icon: Icon, label, sub, color, url, isLive }: { icon: any, label: string, sub: string, color: string, url: string, isLive: boolean }) {
+  return (
+    <a 
+      href={isLive ? url : undefined} 
+      target={isLive ? "_blank" : undefined} 
+      rel={isLive ? "noopener noreferrer" : undefined} 
+      className={`flex items-center space-x-3 p-3 rounded-xl transition-all group ${
+        isLive 
+          ? 'hover:bg-white/5 cursor-pointer' 
+          : 'opacity-50 grayscale cursor-not-allowed'
+      }`}
+    >
+      <div className={`p-2 rounded-lg bg-black/40 ${isLive ? color : 'text-gray-600'} ${isLive ? 'group-hover:scale-110' : ''} transition-transform relative`}>
+        <Icon className="w-4 h-4" />
+        {isLive && (
+          <span className="absolute -top-1 -right-1 flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+          </span>
+        )}
+      </div>
+      <div>
+        <p className={`text-[11px] font-black uppercase tracking-tighter ${isLive ? 'text-white' : 'text-gray-500'}`}>{label}</p>
+        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">{sub}</p>
+      </div>
+    </a>
   );
 }
 

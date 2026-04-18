@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import YoutubeLiveBadge from '../YoutubeLiveBadge';
 import { LogOut, Menu, X, Home, ShoppingBag, Zap, LayoutDashboard, Newspaper, Trophy, Info, FileText, Youtube, Send, Instagram, Facebook, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -122,8 +123,11 @@ export default function Navbar({ user }: NavbarProps) {
           {/* Social Links Block */}
           <div className="h-6 w-[2px] bg-white/10 mx-2" />
           
-          <div className="flex items-center space-x-1">
-            {SOCIAL_LINKS.map((social) => (
+          <div className="flex items-center space-x-3">
+            <YoutubeLiveBadge />
+            
+            <div className="flex items-center space-x-1">
+              {SOCIAL_LINKS.map((social) => (
               <a 
                 key={social.name}
                 href={social.url}
@@ -148,6 +152,7 @@ export default function Navbar({ user }: NavbarProps) {
           </div>
         </div>
       </div>
-    </nav>
+    </div>
+  </nav>
   );
 }

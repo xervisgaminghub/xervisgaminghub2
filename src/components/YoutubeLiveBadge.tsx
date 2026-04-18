@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Youtube } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export default function YouTubeIndicator() {
+export default function YoutubeLiveBadge() {
   const [isLive, setIsLive] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -13,6 +13,7 @@ export default function YouTubeIndicator() {
         const data = await response.json();
         setIsLive(data.isLive);
       } catch (error) {
+        console.error("Live check failed:", error);
         setIsLive(false);
       } finally {
         setLoading(false);
@@ -20,6 +21,7 @@ export default function YouTubeIndicator() {
     };
 
     checkLiveStatus();
+    // Re-check every 2 minutes
     const interval = setInterval(checkLiveStatus, 120000);
     return () => clearInterval(interval);
   }, []);
@@ -33,10 +35,10 @@ export default function YouTubeIndicator() {
       href={isLive ? url : undefined}
       target={isLive ? "_blank" : undefined}
       rel={isLive ? "noopener noreferrer" : undefined}
-      className={`inline-flex items-center space-x-2 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border transition-all ${
+      className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all ${
         isLive 
-          ? 'border-red/50 text-red shadow-[0_0_15px_rgba(255,0,0,0.2)] cursor-pointer hover:bg-red/10' 
-          : 'border-white/5 text-gray-600 grayscale cursor-not-allowed opacity-50'
+          ? 'bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white shadow-[0_0_15px_rgba(239,68,68,0.3)] cursor-pointer' 
+          : 'bg-white/5 border-white/10 text-gray-600 grayscale cursor-not-allowed'
       }`}
     >
       <div className="relative">
@@ -45,7 +47,7 @@ export default function YouTubeIndicator() {
           <motion.div 
             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="absolute inset-0 bg-red rounded-full -z-10 blur-sm"
+            className="absolute inset-0 bg-red-500 rounded-full -z-10 blur-sm"
           />
         )}
       </div>
