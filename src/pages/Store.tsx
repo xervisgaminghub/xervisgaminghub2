@@ -4,7 +4,7 @@ import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search } from 'lucide-react';
+import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search, Trophy } from 'lucide-react';
 
 interface StoreProps {
   user: UserProfile | null;
@@ -22,35 +22,10 @@ const PRODUCTS = [
   { id: 'ff-240d', name: 'Free Fire 240 Diamond', price: 170, subFolder: 'Free Fire Top up', category: 'Diamond' },
   { id: 'ff-355d', name: 'Free Fire 355 Diamonds', price: 250, subFolder: 'Free Fire Top up', category: 'Diamond' },
   { id: 'ff-505d', name: 'Free Fire 505 Diamonds', price: 370, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { 
-    id: 'lunar-file', 
-    name: 'Lunar Client File', 
-    price: 0, 
-    subFolder: 'Download File', 
-    category: 'File', 
-    image: 'https://drive.google.com/thumbnail?id=16Mkvo_fhBqNS73rxUyaPOw7vIHKdP6n2&sz=w600',
-    description: 'Lunar Client Optimized Mod File. Boost your Minecraft gameplay with smoother performance, higher FPS, and a clean interface using this optimized Lunar Client config.',
-    features: ['⚡ FPS Boost', '🎯 Smooth gameplay', '🧹 Clean HUD', '🔧 Optimized settings', '🌙 Lunar Client compatible'],
-    details: 'Version: Latest • Size: Lightweight • Works with most Minecraft versions',
-    downloadUrl: 'https://xervisgaminghub.blogspot.com/2026/04/lunar-client-file-download.html'
-  },
-  {
-    id: 'the-king-cheats',
-    name: 'TheKingCheatsSafe_V23',
-    price: 0,
-    subFolder: 'Download File',
-    category: 'File',
-    image: 'https://drive.google.com/thumbnail?id=1xI67S5XL3L4TmcGXSes4nTf1j56H0yzb&sz=w600',
-    description: 'Enhance your gameplay with this optimized and updated cheat/mod file. Designed for smooth performance and better control, it delivers a stable and improved gaming experience.',
-    features: ['⚡ Smooth performance', '🎯 Optimized settings', '🆕 Latest version (V23)', '🎮 Easy to use'],
-    details: 'Version: Latest (V23) • Size: Lightweight • Safe & Tested',
-    downloadUrl: 'https://xervisgaminghub.blogspot.com/2026/04/thekingcheatssafev236.html'
-  },
 ];
 
 const SUB_FOLDERS = [
   { name: 'Free Fire Top up', icon: Diamond, color: 'text-cyan' },
-  { name: 'Download File', icon: Download, color: 'text-yellow-500' },
 ];
 
 export default function Store({ user }: StoreProps) {
@@ -169,7 +144,7 @@ export default function Store({ user }: StoreProps) {
 
           {filteredProducts.length === 0 ? (
             <div className="text-center py-24 glass rounded-3xl border-dashed border-white/10">
-              <Download className="w-16 h-16 text-gray-700 mx-auto mb-4 opacity-20" />
+              <Diamond className="w-16 h-16 text-gray-700 mx-auto mb-4 opacity-20" />
               <h3 className="text-xl font-black text-gray-600 uppercase tracking-widest mb-2">No Resources Found</h3>
               <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">No matching items indexed in this sector. Transmission pending.</p>
             </div>
@@ -192,8 +167,8 @@ export default function Store({ user }: StoreProps) {
                     }`}
                   >
                     <div className="h-28 bg-black/40 rounded-2xl flex items-center justify-center text-5xl mb-4 group-hover:scale-110 transition-transform duration-500 overflow-hidden">
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      {product.id === 'ff-lup' ? (
+                        <Trophy className="w-16 h-16 text-yellow-500" />
                       ) : (
                         product.category === 'Diamond' ? '💎' : '💳'
                       )}
@@ -223,56 +198,7 @@ export default function Store({ user }: StoreProps) {
             </h3>
 
             {selectedProduct ? (
-              selectedProduct.subFolder === 'Download File' ? (
-                <div className="space-y-6">
-                  {selectedProduct.image && (
-                    <div className="aspect-video w-full rounded-2xl bg-black/40 border border-white/5 overflow-hidden">
-                      <img 
-                        src={selectedProduct.image} 
-                        alt={selectedProduct.name} 
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  )}
-                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Resource Index</p>
-                    <p className="font-bold text-cyan text-lg">{selectedProduct.name}</p>
-                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">{(selectedProduct as any).description}</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-black">Tactical Features</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      {(selectedProduct as any).features?.map((f: string) => (
-                        <div key={f} className="flex items-center space-x-2 text-[10px] text-gray-300 font-bold bg-white/5 p-2 rounded-lg border border-white/5">
-                          <span>{f}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                    <p className="text-[9px] text-yellow-500 font-black uppercase tracking-widest mb-1 italic">Security Advisory:</p>
-                    <p className="text-[10px] text-gray-400 leading-tight">🛡️ Safe & Tested. ⚠️ Files hosted on third-party servers (MediaFire). Use at own risk.</p>
-                  </div>
-
-                  <a 
-                    href={(selectedProduct as any).downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-neon w-full py-4 flex items-center justify-center space-x-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download Now</span>
-                  </a>
-
-                  <p className="text-[9px] text-gray-600 text-center uppercase tracking-[0.2em] font-black italic">
-                    {(selectedProduct as any).details}
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleOrder} className="space-y-4">
+              <form onSubmit={handleOrder} className="space-y-4">
                 <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
                   <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Selected Product</p>
                   <p className="font-bold text-cyan">{selectedProduct.name}</p>
@@ -346,7 +272,7 @@ export default function Store({ user }: StoreProps) {
                   Secure Transaction Verification
                 </p>
               </form>
-            )) : (
+            ) : (
               <div className="text-center py-12">
                 <Diamond className="w-12 h-12 text-gray-700 mx-auto mb-4" />
                 <p className="text-gray-500 text-sm">Select a product to start your order.</p>
