@@ -10,7 +10,6 @@ import Dashboard from './pages/Dashboard';
 import Store from './pages/Store';
 import Terms from './pages/Terms';
 import Tournament from './pages/Tournament';
-import Earning from './pages/Earning';
 import About from './pages/About';
 
 // Components
@@ -76,7 +75,6 @@ function AppRoutes() {
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard user={user!} /></ProtectedRoute>} />
-          <Route path="/earning" element={<ProtectedRoute><Earning user={user!} /></ProtectedRoute>} />
           
           {/* Public Routes */}
           <Route path="/store" element={<Store user={user} />} />

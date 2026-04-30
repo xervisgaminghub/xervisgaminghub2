@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import YoutubeLiveBadge from '../YoutubeLiveBadge';
 import { LogOut, Menu, X, Home, ShoppingBag, Zap, LayoutDashboard, Newspaper, Trophy, Info, FileText, Youtube, Send, Instagram, Facebook, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -14,7 +13,6 @@ const NAV_LINKS = [
   { name: 'Home', path: '/', icon: Home },
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Products', path: '/store', icon: ShoppingBag },
-  { name: 'Earning', path: '/earning', icon: Zap },
   { name: 'Tournament', path: '/tournament', icon: Trophy },
   { name: 'About', path: '/about', icon: Info },
   { name: 'Terms', path: '/terms', icon: FileText },
@@ -124,8 +122,6 @@ export default function Navbar({ user }: NavbarProps) {
           <div className="h-6 w-[2px] bg-white/10 mx-2" />
           
           <div className="flex items-center space-x-3">
-            <YoutubeLiveBadge />
-            
             <div className="flex items-center space-x-1">
               {SOCIAL_LINKS.map((social) => (
               <a 
