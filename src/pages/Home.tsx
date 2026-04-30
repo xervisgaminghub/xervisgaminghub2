@@ -22,7 +22,7 @@ const HUB_LINKS = [
 ];
 
 export default function Home({ user }: HomeProps) {
-  const [stats, setStats] = useState({ purchases: 0, referrals: 0 });
+  const [stats, setStats] = useState({ purchases: 0 });
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -30,12 +30,9 @@ export default function Home({ user }: HomeProps) {
         try {
           const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.uid));
           const ordersSnap = await getDocs(ordersQuery);
-          const referralsQuery = query(collection(db, 'users'), where('referredBy', '==', user.referralCode));
-          const referralsSnap = await getDocs(referralsQuery);
 
           setStats({
-            purchases: ordersSnap.size,
-            referrals: referralsSnap.size
+            purchases: ordersSnap.size
           });
         } catch (error) {
           console.error("Error fetching stats:", error);
@@ -88,7 +85,7 @@ export default function Home({ user }: HomeProps) {
               <span className="ml-2 text-[10px] font-black uppercase tracking-widest">Alert</span>
             </div>
             <div className="scrolling-text text-[10px] font-bold text-cyan uppercase tracking-[0.2em] w-full">
-              🔥 Welcome to Xervis Gaming Hub 🎮 | Play • Earn • Redeem 💰 | 💎 Free Fire Diamond Top-Up Available Now ⚡ | 🎁 Watch Ads & Unlock Free Downloads | 👥 Invite Friends & Earn Bonus Points 🔥 | 🏆 Level Up System Active – Reach Diamond & Crown 👑 | 💸 10 Points = 1 BDT | 🎯 Daily Earning সুযোগ চলছে | 🚨 AdBlock বন্ধ না করলে Download Unlock হবে না ❌ | 🎮 Mini Games খেলুন এবং প্রতি মিনিটে Point Earn করুন | 📡 Live Tournament Updates Coming Soon | 🚀 Join Now & Start Earning Today!
+              🔥 Welcome to Xervis Gaming Hub 🎮 | Play • Earn • Redeem 💰 | 💎 Free Fire Diamond Top-Up Available Now ⚡ | 🎁 Watch Ads & Unlock Free Downloads | 🏆 Level Up System Active – Reach Diamond & Crown 👑 | 💸 10 Points = 1 BDT | 🎯 Daily Earning সুযোগ চলছে | 🚨 AdBlock বন্ধ না করলে Download Unlock হবে না ❌ | 🎮 Mini Games খেলুন এবং প্রতি মিনিটে Point Earn করুন | 📡 Live Tournament Updates Coming Soon | 🚀 Join Now & Start Earning Today!
             </div>
           </div>
         </div>
@@ -98,9 +95,8 @@ export default function Home({ user }: HomeProps) {
           <div className="stat-panel bg-black/40 h-full flex flex-col justify-between">
             <div>
               <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-6">User Telemetry</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <StatBox value={user ? stats.purchases.toString() : "0"} label="Orders" />
-                <StatBox value={user ? stats.referrals.toString() : "0"} label="Refs" />
                 <StatBox value={user ? `৳${Math.floor(user.points / 10)}` : "৳0"} label="Credit" />
                 <StatBox value={user ? user.level : "--"} label="Rank" />
               </div>

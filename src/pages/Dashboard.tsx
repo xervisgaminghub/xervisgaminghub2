@@ -66,8 +66,8 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
         </div>
 
-        {/* Level Card */}
-        <div className="stat-panel border-red/20 relative overflow-hidden group">
+          {/* Level Card */}
+        <div className="stat-panel border-red/20 relative overflow-hidden group lg:col-span-3">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Trophy className="w-16 h-16 text-red" />
           </div>
@@ -77,21 +77,6 @@ export default function Dashboard({ user }: DashboardProps) {
             <div className="bg-red h-full" style={{ width: `${(user.points % 100)}%` }}></div>
           </div>
           <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-bold">{(100 - (user.points % 100))} points to next level</p>
-        </div>
-
-        {/* Referral Card */}
-        <div className="stat-panel border-white/10 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Users className="w-16 h-16 text-white" />
-          </div>
-          <p className="stat-label mb-1">Referral Code</p>
-          <div className="flex items-center justify-between bg-black/30 p-3 rounded-lg border border-white/5 mb-2">
-            <span className="font-mono text-lg font-bold tracking-widest">{user.referralCode}</span>
-            <button onClick={copyReferral} className="p-1.5 hover:bg-white/10 rounded transition-colors">
-              <Copy className="w-4 h-4 text-cyan" />
-            </button>
-          </div>
-          <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Earn 20 points per referral</p>
         </div>
       </div>
 

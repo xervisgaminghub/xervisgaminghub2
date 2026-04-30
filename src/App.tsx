@@ -79,7 +79,7 @@ function AppRoutes() {
           {/* Public Routes */}
           <Route path="/store" element={<Store user={user} />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/tournament" element={<Tournament />} />
+          <Route path="/tournament" element={<Tournament user={user} />} />
           <Route path="/about" element={<About />} />
           
           {/* Fallback */}

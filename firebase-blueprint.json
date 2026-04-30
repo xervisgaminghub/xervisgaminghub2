@@ -58,6 +58,22 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["referrerId", "referredUserId", "createdAt"]
+    },
+    "TournamentRegistration": {
+      "title": "TournamentRegistration",
+      "description": "Registration for tournament",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "teamName": { "type": "string" },
+        "player1": { "type": "string" },
+        "player2": { "type": "string" },
+        "player3": { "type": "string" },
+        "player4": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "teamName", "player1", "player2", "player3", "player4", "phone", "createdAt"]
     }
   },
   "firestore": {
@@ -76,6 +92,10 @@
     "/referrals/{referralId}": {
       "schema": "Referral",
       "description": "Referral relationship records"
+    },
+    "/tournamentRegistrations/{registrationId}": {
+      "schema": "TournamentRegistration",
+      "description": "Registration for tournament"
     }
   }
 }

@@ -17,7 +17,6 @@ export default function Signup() {
     password: '',
     age: '',
     phone: '',
-    referralCode: '',
     confirm18: false,
     acceptTerms: false
   });
@@ -39,24 +38,6 @@ export default function Signup() {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      let referrerUid = null;
-      let referrerCode = null;
-
-      // Validate Referral Code if provided - NOW AFTER AUTH to have permissions
-      if (formData.referralCode.trim()) {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('referralCode', '==', formData.referralCode.trim().toUpperCase()));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          const referrerDoc = querySnapshot.docs[0];
-          referrerUid = referrerDoc.id;
-          referrerCode = formData.referralCode.trim().toUpperCase();
-        } else {
-          toast.warning("Invalid referral code. Proceeding with regular signup.");
-        }
-      }
-
       // Generate AI Username
       const username = await generateGamingUsername(formData.name);
 
@@ -67,37 +48,15 @@ export default function Signup() {
         age: parseInt(formData.age),
         phone: formData.phone,
         username: username,
-        points: referrerUid ? 20 : 10, // 10 Base + 10 Referral bonus if referred
+        points: 10,
         level: 'Silver',
-        referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        referredBy: referrerCode || null,
-        referralCount: 0,
         createdAt: new Date().toISOString()
       };
 
       await setDoc(doc(db, 'users', user.uid), userData);
-
-      // Reward Referrer
-      if (referrerUid) {
-        try {
-          await updateDoc(doc(db, 'users', referrerUid), {
-            points: increment(20),
-            referralCount: increment(1)
-          });
-        } catch (updateErr) {
-          console.error("Failed to reward referrer:", updateErr);
-          // Don't fail the whole signup if referrer update fails
-        }
-      }
-
       await sendUserDataToSheet(userData);
 
-      if (referrerCode) {
-        toast.success(`Welcome to the Hub, ${username}! Referral applied: +10 Bonus Points!`);
-      } else {
-        toast.success(`Welcome to the Hub, ${username}!`);
-      }
-      
+      toast.success(`Welcome to the Hub, ${username}!`);
       navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message);
@@ -224,17 +183,6 @@ export default function Signup() {
                 onChange={e => setFormData({...formData, phone: e.target.value})}
               />
             </div>
-          </div>
-
-          <div className="relative">
-            <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Referral Code (Optional)" 
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-cyan outline-none transition-all uppercase"
-              value={formData.referralCode}
-              onChange={e => setFormData({...formData, referralCode: e.target.value})}
-            />
           </div>
 
           <div className="space-y-3 pt-2">

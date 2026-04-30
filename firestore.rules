@@ -100,9 +100,14 @@ service cloud.firestore {
     }
 
     match /referrals/{referralId} {
-      allow read: if isAuthenticated() && (request.auth.uid == resource.data.referrerId || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.referredUserId == request.auth.uid;
-      allow update, delete: if false;
+      allow read, write: if false;
+    }
+
+    match /tournamentRegistrations/{registrationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.keys().hasAll(['userId', 'teamName', 'player1', 'player2', 'player3', 'player4', 'phone', 'createdAt']);
     }
   }
 }
