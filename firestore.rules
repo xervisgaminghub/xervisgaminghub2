@@ -111,5 +111,9 @@ service cloud.firestore {
                     request.resource.data.keys().hasAll(['userId', 'teamName', 'player1', 'player2', 'player3', 'player4', 'phone', 'createdAt']);
       allow delete: if isAdmin();
     }
+
+    match /admin_otps/{uid} {
+      allow read, write, delete: if isAuthenticated() && uid == request.auth.uid;
+    }
   }
 }

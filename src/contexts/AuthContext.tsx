@@ -10,6 +10,8 @@ interface AuthContextType {
   loading: boolean;
   logout: () => Promise<void>;
   isAdmin: boolean;
+  isMfaVerified: boolean;
+  verifyMfa: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMfaVerified, setIsMfaVerified] = useState(false);
 
   useEffect(() => {
     let unsubSnapshot: (() => void) | null = null;
@@ -48,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         setUser(null);
+        setIsMfaVerified(false);
         setLoading(false);
       }
     });
@@ -60,14 +64,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
+    setIsMfaVerified(false);
   };
+
+  const verifyMfa = () => setIsMfaVerified(true);
 
   const isAdmin = user?.role === 'admin' || 
                   user?.email === 'mdmasumofficial7@gmail.com' || 
                   user?.email === 'sajewel132@gmail.com';
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, logout, isAdmin, isMfaVerified, verifyMfa }}>
       {children}
     </AuthContext.Provider>
   );
