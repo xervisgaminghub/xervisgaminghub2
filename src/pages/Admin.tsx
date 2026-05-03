@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock } from 'lucide-react';
 
 interface AdminProps {
   user: UserProfile;
@@ -20,11 +20,29 @@ export default function Admin({ user }: AdminProps) {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
+  // Password Lock State
+  const [passcode, setPasscode] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [passError, setPassError] = useState(false);
+
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && isUnlocked) {
       fetchData();
     }
-  }, [activeTab]);
+  }, [activeTab, isUnlocked]);
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcode === '1357') {
+      setIsUnlocked(true);
+      setPassError(false);
+      toast.success("Terminal Unlocked. Welcome, Grandmaster.");
+    } else {
+      setPassError(true);
+      setPasscode('');
+      toast.error("Invalid Access Code. Terminal remains locked.");
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -111,6 +129,50 @@ export default function Admin({ user }: AdminProps) {
           <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Access Denied</h2>
           <p className="text-gray-500 text-xs mt-2 uppercase tracking-widest font-bold">Unauthorized operative identified. Terminal locked.</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md glass p-8 rounded-[2rem] border-cyan/20 text-center"
+        >
+          <div className="w-20 h-20 bg-cyan/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-cyan/30">
+            <Lock className={`w-10 h-10 ${passError ? 'text-red animate-shake' : 'text-cyan'}`} />
+          </div>
+          
+          <h2 className="text-3xl font-black tracking-tighter uppercase italic mb-2">Terminal <span className="text-cyan">Locked</span></h2>
+          <p className="text-gray-400 text-xs uppercase tracking-[0.2em] font-bold mb-8">Level 0 Verification Required</p>
+
+          <form onSubmit={handleUnlock} className="space-y-4">
+            <div className="relative">
+              <input 
+                type="password" 
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                placeholder="ENTER ACCESS CODE"
+                className={`w-full bg-white/5 border-2 rounded-2xl py-4 text-center text-xl font-black tracking-[0.5em] outline-none transition-all placeholder:text-gray-700 placeholder:tracking-normal placeholder:text-xs ${passError ? 'border-red/50 focus:border-red animate-shake' : 'border-white/10 focus:border-cyan'}`}
+                autoFocus
+              />
+            </div>
+            
+            <button 
+              type="submit"
+              className="btn-cyan w-full py-4 flex items-center justify-center space-x-2 group"
+            >
+              <Zap className="w-5 h-5 group-hover:animate-pulse" />
+              <span className="font-black uppercase tracking-widest">Authorize Access</span>
+            </button>
+          </form>
+
+          <p className="mt-8 text-[9px] text-gray-600 uppercase tracking-widest font-mono">
+            Cryptographic handshake active • Layer 3 Encryption
+          </p>
+        </motion.div>
       </div>
     );
   }

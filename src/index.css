@@ -8,6 +8,13 @@
   --color-glass: rgba(10, 15, 25, 0.7);
   --color-glass-border: rgba(0, 229, 255, 0.15);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  --animate-shake: shake 0.2s ease-in-out infinite;
 }
 
 @layer base {

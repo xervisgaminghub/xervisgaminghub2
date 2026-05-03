@@ -74,18 +74,6 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "teamName", "player1", "player2", "player3", "player4", "phone", "createdAt"]
-    },
-    "AdminOTP": {
-      "title": "AdminOTP",
-      "description": "Transient OTP for admin 2FA",
-      "type": "object",
-      "properties": {
-        "email": { "type": "string", "format": "email" },
-        "code": { "type": "string" },
-        "expiresAt": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["email", "code", "expiresAt", "createdAt"]
     }
   },
   "firestore": {
@@ -108,10 +96,6 @@
     "/tournamentRegistrations/{registrationId}": {
       "schema": "TournamentRegistration",
       "description": "Registration for tournament"
-    },
-    "/admin_otps/{otpId}": {
-      "schema": "AdminOTP",
-      "description": "Temporary OTP codes for admin verification"
     }
   }
 }
