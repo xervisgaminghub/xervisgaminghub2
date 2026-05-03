@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +11,7 @@ import { Mail, Lock, Gamepad2, X, ShieldCheck, ArrowRight, RefreshCw } from 'luc
 const ADMIN_EMAILS = ['mdmasumofficial7@gmail.com', 'sajewel132@gmail.com'];
 
 export default function Login() {
-  const { verifyMfa } = useAuth();
+  const { verifyMfa, isAdmin: contextIsAdmin, firebaseUser, isMfaVerified, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,6 +25,24 @@ export default function Login() {
   const [pendingUser, setPendingUser] = useState<any>(null);
 
   const navigate = useNavigate();
+
+  // Handle case where user is already logged in but needs MFA
+  useEffect(() => {
+    if (firebaseUser && !authLoading) {
+      if (contextIsAdmin) {
+        if (!isMfaVerified && !showOtpStep) {
+          setPendingUser(firebaseUser);
+          setShowOtpStep(true);
+          generateAndSendOtp(firebaseUser);
+        } else if (isMfaVerified) {
+          navigate('/dashboard');
+        }
+      } else {
+        // Normal user
+        navigate('/dashboard');
+      }
+    }
+  }, [firebaseUser, authLoading, contextIsAdmin, isMfaVerified, showOtpStep, navigate]);
 
   const generateAndSendOtp = async (user: any) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -56,29 +74,10 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Check if user is admin
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.data();
-      const isAdmin = userData?.role === 'admin' || ADMIN_EMAILS.includes(user.email || '');
-
-      if (isAdmin) {
-        setPendingUser(user);
-        const success = await generateAndSendOtp(user);
-        if (success) {
-          setShowOtpStep(true);
-        } else {
-          await signOut(auth);
-        }
-      } else {
-        toast.success("Welcome back, Gamer!");
-        navigate('/dashboard');
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Identity accepted. Checking clearance...");
     } catch (error: any) {
       toast.error(error.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -145,10 +144,9 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate('/dashboard');
+      toast.success("Identity accepted. Checking clearance...");
     } catch (error: any) {
       toast.error(error.message);
-    } finally {
       setLoading(false);
     }
   };
