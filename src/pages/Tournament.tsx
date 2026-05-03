@@ -3,6 +3,7 @@ import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle } f
 import { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { toast } from 'sonner';
 
@@ -18,6 +19,7 @@ interface TournamentProps {
 }
 
 export default function Tournament({ user }: TournamentProps) {
+  const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'official' | 'community'>('official');
   const [showRegForm, setShowRegForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -25,8 +27,6 @@ export default function Tournament({ user }: TournamentProps) {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-
-  const isAdmin = user?.role === 'admin' || user?.email === 'mdmasumofficial7@gmail.com';
 
   useEffect(() => {
     fetchRegistrations();

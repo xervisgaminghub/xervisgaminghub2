@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { LogOut, Menu, X, Home, ShoppingBag, Zap, LayoutDashboard, Newspaper, Trophy, Info, FileText, Youtube, Send, Instagram, Facebook, MessageSquare } from 'lucide-react';
+import { LogOut, Menu, X, Home, ShoppingBag, Zap, LayoutDashboard, Newspaper, Trophy, Info, FileText, Youtube, Send, Instagram, Facebook, MessageSquare, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -26,9 +26,12 @@ const SOCIAL_LINKS = [
 ];
 
 export default function Navbar({ user }: NavbarProps) {
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const adminLink = isAdmin ? [{ name: 'Admin', path: '/admin', icon: Shield }] : [];
+  const allNavLinks = [...NAV_LINKS, ...adminLink];
 
   const handleLogout = async () => {
     try {
@@ -108,7 +111,7 @@ export default function Navbar({ user }: NavbarProps) {
       <div className="overflow-x-auto custom-scrollbar bg-black/40 border-t border-white/5">
         <div className="flex items-center justify-start lg:justify-center min-w-max px-4 py-2 space-x-1 md:space-x-4">
           {/* Main Links */}
-          {NAV_LINKS.map((link) => (
+          {allNavLinks.map((link) => (
             <Link 
               key={link.path}
               to={link.path} 

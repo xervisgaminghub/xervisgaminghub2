@@ -3,15 +3,17 @@ import { UserProfile, Order } from '../types';
 import { useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { Zap, Trophy, Users, History, Copy, Gift, User } from 'lucide-react';
+import { Zap, Trophy, Users, History, Copy, Gift, User, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardProps {
   user: UserProfile;
 }
 
 export default function Dashboard({ user }: DashboardProps) {
+  const { isAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,6 +80,19 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
           <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-bold">{(100 - (user.points % 100))} points to next level</p>
         </div>
+
+        {isAdmin && (
+          <Link to="/admin" className="lg:col-span-3">
+            <div className="stat-panel border-cyan/20 bg-cyan/5 relative overflow-hidden group hover:bg-cyan/10 transition-all cursor-pointer">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Shield className="w-16 h-16 text-cyan" />
+              </div>
+              <p className="stat-label mb-1 text-cyan">Administrative Access</p>
+              <h2 className="text-2xl font-black text-white uppercase italic">Open Admin Panel</h2>
+              <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-bold font-mono">Manage Users • Orders • Site Config</p>
+            </div>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

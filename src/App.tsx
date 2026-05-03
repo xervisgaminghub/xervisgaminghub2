@@ -11,6 +11,7 @@ import Store from './pages/Store';
 import Terms from './pages/Terms';
 import Tournament from './pages/Tournament';
 import About from './pages/About';
+import Admin from './pages/Admin';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -83,6 +84,7 @@ function AppRoutes() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/tournament" element={<Tournament user={user} />} />
           <Route path="/about" element={<About />} />
+          <Route path="/admin" element={<ProtectedRoute><Admin user={user!} /></ProtectedRoute>} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />

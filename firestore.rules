@@ -35,7 +35,8 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && 
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "mdmasumofficial7@gmail.com" && request.auth.token.email_verified == true));
+         (request.auth.token.email == "mdmasumofficial7@gmail.com" && request.auth.token.email_verified == true) ||
+         (request.auth.token.email == "sajewel132@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isValidEmail(email) {

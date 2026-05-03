@@ -9,6 +9,7 @@ interface AuthContextType {
   firebaseUser: User | null;
   loading: boolean;
   logout: () => Promise<void>;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,8 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
+  const isAdmin = user?.role === 'admin' || 
+                  user?.email === 'mdmasumofficial7@gmail.com' || 
+                  user?.email === 'sajewel132@gmail.com';
+
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, logout }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
