@@ -17,6 +17,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import WhatsAppButton from './components/layout/WhatsAppButton';
 import LoadingScreen from './components/ui/LoadingScreen';
+import RainEffect from './components/ui/RainEffect';
 import AdBlockDetector from './components/ui/AdBlockDetector';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
@@ -64,7 +65,8 @@ function AppRoutes() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <RainEffect />
       <AdBlockDetector />
       <Navbar user={user} />
       <main className="flex-grow">

@@ -67,14 +67,14 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
 
           {/* Level Card */}
-        <div className="stat-panel border-red/20 relative overflow-hidden group lg:col-span-3">
+        <div className="stat-panel border-white/5 relative overflow-hidden group lg:col-span-3 bg-black/40 backdrop-blur-3xl shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Trophy className="w-16 h-16 text-red" />
+            <Trophy className="w-16 h-16 text-cyan" />
           </div>
           <p className="stat-label mb-1">Current Level</p>
-          <h2 className="text-4xl font-black text-red drop-shadow-[0_0_10px_rgba(255,0,51,0.5)] mb-2">{user.level}</h2>
-          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-red h-full" style={{ width: `${(user.points % 100)}%` }}></div>
+          <h2 className="text-4xl font-black text-cyan drop-shadow-[0_0_15px_rgba(0,229,255,0.3)] mb-2">{user.level}</h2>
+          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
+            <div className="bg-cyan h-full shadow-[0_0_10px_rgba(0,229,255,0.5)]" style={{ width: `${(user.points % 100)}%` }}></div>
           </div>
           <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-bold">{(100 - (user.points % 100))} points to next level</p>
         </div>

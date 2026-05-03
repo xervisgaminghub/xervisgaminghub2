@@ -42,9 +42,14 @@ export default function Navbar({ user }: NavbarProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 flex flex-col border-b border-cyan/20 glass-cyan shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+    <nav className="sticky top-0 z-50 flex flex-col border-b border-cyan/10 bg-black/40 backdrop-blur-3xl shadow-[0_4px_30px_rgba(0,0,0,0.7)]">
       {/* Top Tier: Logo & Auth */}
-      <div className="h-24 md:h-28 px-4 md:px-8 flex items-center justify-between border-b border-white/5">
+      <div className="h-24 md:h-28 px-4 md:px-8 flex items-center justify-between border-b border-white/5 relative overflow-hidden">
+        {/* Animated Lightning Accent background for Navbar */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-[1px] h-full bg-cyan blur-sm animate-pulse" />
+          <div className="absolute top-0 right-1/4 w-[1px] h-full bg-cyan blur-sm animate-pulse delay-700" />
+        </div>
         {/* Logo Section */}
         <Link to="/" className="flex items-center shrink-0">
           <img 

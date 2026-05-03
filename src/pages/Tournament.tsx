@@ -126,7 +126,7 @@ export default function Tournament({ user }: TournamentProps) {
           >
             <Trophy className="w-20 h-20 text-gray-700 mx-auto mb-6 opacity-30" />
             <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4">No official tournament registration yet.</h2>
-            <div className="max-w-md mx-auto p-6 bg-red/10 border border-red/20 rounded-2xl">
+            <div className="max-w-md mx-auto p-6 bg-black/40 border border-white/5 rounded-2xl">
               <p className="text-sm text-gray-400 mb-6 font-bold uppercase tracking-wider">
                 To watch Official Tournament Click on Stream button.
               </p>
@@ -165,7 +165,7 @@ export default function Tournament({ user }: TournamentProps) {
                   <DetailItem label="Platform" value="Mobile" />
                 </div>
 
-                <div className="p-6 bg-cyan/5 border border-cyan/20 rounded-2xl mb-8">
+                <div className="p-6 bg-cyan/5 border border-cyan/10 rounded-2xl mb-8 backdrop-blur-md">
                   <p className="text-xs text-cyan font-black uppercase tracking-[0.2em] mb-2">Prize Pool Information:</p>
                   <p className="text-sm text-gray-300 font-bold leading-relaxed">
                     Total: 100 Diamonds. 25 Diamonds per player for the winner squad (100 total).

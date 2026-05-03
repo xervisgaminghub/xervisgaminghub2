@@ -47,20 +47,20 @@ export default function Home({ user }: HomeProps) {
   const xpPercentage = (xpProgress / 1000) * 100;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
       {/* Top Section: Hero & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Hero Banner */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="h-[300px] rounded-3xl border border-cyan/20 relative overflow-hidden flex items-end p-8 group">
+          <div className="h-[300px] rounded-3xl border border-white/5 relative overflow-hidden flex items-end p-8 group shadow-[0_0_50px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-0 z-0">
               <img 
-                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000" 
-                alt="Hero" 
-                className="w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
+                src="https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=1000" 
+                alt="Stormy Hero" 
+                className="w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000 grayscale select-none"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#05070a] via-[#05070a]/60 to-transparent"></div>
             </div>
             
             <div className="relative z-10">
@@ -68,18 +68,18 @@ export default function Home({ user }: HomeProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <h1 className="text-5xl font-black leading-none mb-2 tracking-tighter">CENTRAL <span className="text-cyan">HUB</span></h1>
-                <p className="text-gray-300 mb-6 max-w-md">Welcome to Xervis Protocol. Select a sector from the command matrix below to initiate your gaming session.</p>
+                <h1 className="text-5xl font-black leading-none mb-2 tracking-tighter drop-shadow-[0_0_15px_rgba(0,229,255,0.3)]">CENTRAL <span className="text-cyan">HUB</span></h1>
+                <p className="text-gray-400 mb-6 max-w-md font-bold uppercase text-[10px] tracking-widest leading-relaxed">System initialized for the rainy season. Command matrix recalibrated for atmospheric interference.</p>
                 <div className="flex gap-4">
-                  <Link to="/store" className="bg-cyan text-dark px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(0,255,255,0.4)] hover:bg-white transition-all">Quick Recharge</Link>
-                  <Link to="/tournament" className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-all">Active Events</Link>
+                  <Link to="/store" className="bg-cyan/80 backdrop-blur-md text-dark px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(0,229,255,0.4)] hover:bg-cyan hover:scale-105 transition-all">Quick Recharge</Link>
+                  <Link to="/tournament" className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">Active Events</Link>
                 </div>
               </motion.div>
             </div>
           </div>
 
           {/* Scrolling Ticker - Moved Under Hub */}
-          <div className="bg-cyan/10 border border-cyan/30 rounded-xl h-10 flex items-center overflow-hidden relative shadow-[0_0_20px_rgba(0,255,255,0.05)]">
+          <div className="bg-black/60 backdrop-blur-md border border-white/5 rounded-xl h-10 flex items-center overflow-hidden relative shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
             <div className="absolute left-0 top-0 bottom-0 px-3 bg-cyan text-dark z-10 flex items-center shadow-[5px_0_15px_rgba(0,0,0,0.5)]">
               <Zap className="w-4 h-4" />
               <span className="ml-2 text-[10px] font-black uppercase tracking-widest">Alert</span>
