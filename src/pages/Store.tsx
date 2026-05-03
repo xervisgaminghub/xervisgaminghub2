@@ -70,7 +70,7 @@ export default function Store({ user }: StoreProps) {
 
       // Redirect to WhatsApp
       const message = `ORDER DETAILS:%0AUID: ${orderData.uid}%0AName: ${orderData.name}%0ATXID: ${orderData.txid}%0AProduct: ${selectedProduct.name}%0APrice: ${selectedProduct.price} BDT`;
-      window.open(`https://wa.me/8801878928045?text=${message}`, '_blank');
+      window.open(`https://wa.me/8801977768511?text=${message}`, '_blank');
 
       toast.success("Order placed successfully! Redirecting to WhatsApp...");
       setSelectedProduct(null);

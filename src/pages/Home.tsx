@@ -18,7 +18,7 @@ const HUB_LINKS = [
   { name: 'Tournaments', path: '/tournament', icon: Trophy, color: 'text-emerald-500', desc: 'Join esports events & win big' },
   { name: 'About Us', path: '/about', icon: Info, color: 'text-purple-500', desc: 'Learn about Xervis Hub protocol' },
   { name: 'Legal Terms', path: '/terms', icon: FileText, color: 'text-gray-400', desc: 'User agreements & privacy policy' },
-  { name: 'Support', path: '#', icon: MessageSquare, color: 'text-green-500', desc: 'Direct WhatsApp contact with staff', isExternal: true, url: 'https://wa.me/8801878928045' },
+  { name: 'Support', path: '#', icon: MessageSquare, color: 'text-green-500', desc: 'Direct WhatsApp contact with staff', isExternal: true, url: 'https://wa.me/8801977768511' },
 ];
 
 export default function Home({ user }: HomeProps) {
