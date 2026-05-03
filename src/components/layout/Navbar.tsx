@@ -142,7 +142,7 @@ export default function Navbar({ user }: NavbarProps) {
             ))}
             
             <a 
-              href="https://wa.me/8801961448374" 
+              href="https://wa.me/8801878928045" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center space-x-2 px-3 py-2 bg-green-500/10 border border-green-500/30 text-green-500 rounded-lg font-black uppercase text-[10px] tracking-widest hover:bg-green-500 hover:text-white transition-all ml-1"
