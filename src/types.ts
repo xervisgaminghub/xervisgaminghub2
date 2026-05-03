@@ -9,6 +9,7 @@ export interface UserProfile {
   level: string;
   referralCode: string;
   referredBy?: string;
+  role?: string;
   createdAt: string;
 }
 

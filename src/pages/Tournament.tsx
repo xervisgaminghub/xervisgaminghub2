@@ -3,7 +3,7 @@ import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle } f
 import { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface Registration {
@@ -24,6 +24,9 @@ export default function Tournament({ user }: TournamentProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  const isAdmin = user?.role === 'admin' || user?.email === 'mdmasumofficial7@gmail.com';
 
   useEffect(() => {
     fetchRegistrations();
@@ -49,6 +52,28 @@ export default function Tournament({ user }: TournamentProps) {
       console.error("Error fetching registrations:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearRegistrations = async () => {
+    if (!isAdmin) return;
+    if (!window.confirm("Are you sure you want to CLEAR ALL registrations? This cannot be undone.")) return;
+
+    setIsClearing(true);
+    try {
+      const batch = writeBatch(db);
+      registrations.forEach((reg) => {
+        batch.delete(doc(db, 'tournamentRegistrations', reg.id));
+      });
+      await batch.commit();
+      setRegistrations([]);
+      toast.success("All registrations have been cleared.");
+      fetchRegistrations();
+    } catch (error) {
+      console.error("Error clearing registrations:", error);
+      toast.error("Failed to clear registrations.");
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -128,7 +153,7 @@ export default function Tournament({ user }: TournamentProps) {
             <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-4">No official tournament registration yet.</h2>
             <div className="max-w-md mx-auto p-6 bg-black/40 border border-white/5 rounded-2xl">
               <p className="text-sm text-gray-400 mb-6 font-bold uppercase tracking-wider">
-                To watch Official Tournament Click on Stream button.
+                To watch Official Tournament Click on Live Stream button.
               </p>
               <a 
                 href="https://www.youtube.com/@ffesportsbdofficial"
@@ -137,7 +162,7 @@ export default function Tournament({ user }: TournamentProps) {
                 className="btn-red w-full flex items-center justify-center space-x-2"
               >
                 <Play className="w-4 h-4 fill-current" />
-                <span>Stream Button</span>
+                <span>Live Stream</span>
               </a>
             </div>
           </motion.div>
@@ -195,8 +220,19 @@ export default function Tournament({ user }: TournamentProps) {
                     <Users className="w-5 h-5 text-cyan" />
                     <span>Registered Operatives ({registrations.length}/12)</span>
                   </h3>
-                  <div className="h-2 w-32 bg-white/5 rounded-full overflow-hidden">
-                    <div className="bg-cyan h-full" style={{ width: `${(registrations.length / 12) * 100}%` }}></div>
+                  <div className="flex items-center space-x-4">
+                    {isAdmin && registrations.length > 0 && (
+                      <button 
+                        onClick={clearRegistrations}
+                        disabled={isClearing}
+                        className="text-[10px] font-black text-red hover:text-white uppercase tracking-widest px-3 py-1 border border-red/30 rounded hover:bg-red transition-all flex items-center space-x-1"
+                      >
+                        {isClearing ? 'Clearing...' : 'Clear All'}
+                      </button>
+                    )}
+                    <div className="h-2 w-32 bg-white/5 rounded-full overflow-hidden">
+                      <div className="bg-cyan h-full" style={{ width: `${(registrations.length / 12) * 100}%` }}></div>
+                    </div>
                   </div>
                 </div>
 
@@ -226,7 +262,7 @@ export default function Tournament({ user }: TournamentProps) {
                     <Trophy className="w-16 h-16 text-yellow-500 animate-pulse" />
                     <div className="absolute inset-0 blur-xl bg-yellow-500/20 rounded-full"></div>
                   </div>
-                  <p className="text-2xl font-black text-white tracking-widest uppercase mb-1 underline decoration-yellow-500">Team Xervis</p>
+                  <p className="text-2xl font-black text-white tracking-widest uppercase mb-1 underline decoration-yellow-500 text-center">Diabolic Death Squad</p>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Victory achieved on 24/04</p>
                 </div>
               </div>
