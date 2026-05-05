@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { UserProfile, Order } from '../types';
+import { UserProfile, Order, TournamentRegistration } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX } from 'lucide-react';
 
 interface AdminProps {
   user: UserProfile;
@@ -16,6 +16,7 @@ export default function Admin({ user }: AdminProps) {
   const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function Admin({ user }: AdminProps) {
   const fetchTournamentInfo = async () => {
     setLoading(true);
     try {
+      // Fetch info
       const infoDoc = await getDoc(doc(db, 'tournament_info', 'current'));
       if (infoDoc.exists()) {
         const data = infoDoc.data();
@@ -50,8 +52,13 @@ export default function Admin({ user }: AdminProps) {
         setVictoryDate(data.victoryDate || '');
         setScrollingText(data.scrollingText || '');
       }
+
+      // Fetch registrations
+      const q = query(collection(db, 'tournamentRegistrations'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      setRegistrations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TournamentRegistration)));
     } catch (error) {
-      console.error("Error fetching tournament info:", error);
+      console.error("Error fetching tournament data:", error);
     } finally {
       setLoading(false);
     }
@@ -89,6 +96,40 @@ export default function Admin({ user }: AdminProps) {
       toast.error("Failed to update alert text.");
     } finally {
       setIsUpdating(null);
+    }
+  };
+
+  const updateRegistrationStatus = async (regId: string, status: 'approved' | 'denied') => {
+    let denyReason = '';
+    if (status === 'denied') {
+      const reason = prompt("Enter denial reason (optional):");
+      if (reason === null) return; // User cancelled
+      denyReason = reason;
+    }
+
+    setIsUpdating(regId);
+    try {
+      await updateDoc(doc(db, 'tournamentRegistrations', regId), { 
+        status,
+        denyReason: status === 'denied' ? denyReason : ''
+      });
+      toast.success(`Registration ${status}`);
+      fetchTournamentInfo();
+    } catch (error) {
+      toast.error("Failed to update registration");
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const deleteRegistration = async (regId: string) => {
+    if (!window.confirm("Delete this registration?")) return;
+    try {
+      await deleteDoc(doc(db, 'tournamentRegistrations', regId));
+      toast.success("Registration deleted");
+      fetchTournamentInfo();
+    } catch (error) {
+      toast.error("Failed to delete registration");
     }
   };
 
@@ -570,9 +611,97 @@ export default function Admin({ user }: AdminProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Section 4: Tournament Registrations */}
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
+                      <Users className="w-6 h-6 text-cyan" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black uppercase italic">Tournament <span className="text-cyan">Registrations</span></h3>
+                      <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Approve or Deny awaiting operatives</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-white">{registrations.length}</p>
+                    <p className="text-[8px] text-gray-500 uppercase font-bold tracking-widest">Total Squads</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {registrations.map((reg) => (
+                    <div key={reg.id} className="glass p-6 rounded-[2rem] border-white/5 hover:border-white/10 transition-all group">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <h4 className="text-lg font-black text-white uppercase italic">{reg.teamName}</h4>
+                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                              reg.status === 'approved' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
+                              reg.status === 'denied' ? 'bg-red/20 text-red border-red/30' :
+                              'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-black animate-pulse'
+                            }`}>
+                              {reg.status}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">L1:</span> {reg.player1}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">P2:</span> {reg.player2}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">P3:</span> {reg.player3}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">P4:</span> {reg.player4}</p>
+                          </div>
+                          {reg.status === 'denied' && reg.denyReason && (
+                            <p className="text-[10px] text-red font-bold uppercase p-2 bg-red/10 rounded-lg border border-red/20">
+                              <span className="text-red/60 mr-2 italic">Deny Reason:</span> {reg.denyReason}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-cyan font-black uppercase tracking-widest flex items-center">
+                            <span className="text-gray-600 mr-2">Contact:</span> {reg.phone}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          {reg.status === 'pending' && (
+                            <>
+                              <button 
+                                onClick={() => updateRegistrationStatus(reg.id!, 'approved')}
+                                className="p-3 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-dark rounded-xl transition-all border border-green-500/20"
+                                title="Approve Squad"
+                              >
+                                <UserCheck className="w-5 h-5" />
+                              </button>
+                              <button 
+                                onClick={() => updateRegistrationStatus(reg.id!, 'denied')}
+                                className="p-3 bg-red/10 hover:bg-red text-red hover:text-dark rounded-xl transition-all border border-red/20"
+                                title="Deny Squad"
+                              >
+                                <UserX className="w-5 h-5" />
+                              </button>
+                            </>
+                          )}
+                          <button 
+                            onClick={() => deleteRegistration(reg.id!)}
+                            className="p-3 bg-white/5 hover:bg-red text-gray-400 hover:text-white rounded-xl transition-all border border-white/10"
+                            title="Delete Registration"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {registrations.length === 0 && (
+                    <div className="py-12 text-center glass rounded-[2rem] border-dashed border-white/5">
+                       <Users className="w-12 h-12 text-gray-700 mx-auto mb-4 opacity-20" />
+                       <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">No squad deployments found in sector.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-         )}
+        )}
       </div>
     </div>
   );

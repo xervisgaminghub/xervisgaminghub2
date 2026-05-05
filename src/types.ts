@@ -34,6 +34,20 @@ export interface PointTransaction {
   createdAt: string;
 }
 
+export interface TournamentRegistration {
+  id?: string;
+  userId: string;
+  teamName: string;
+  player1: string;
+  player2: string;
+  player3: string;
+  player4: string;
+  phone: string;
+  status: 'pending' | 'approved' | 'denied';
+  denyReason?: string;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;

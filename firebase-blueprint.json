@@ -71,9 +71,11 @@
         "player3": { "type": "string" },
         "player4": { "type": "string" },
         "phone": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "denied"] },
+        "denyReason": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "teamName", "player1", "player2", "player3", "player4", "phone", "createdAt"]
+      "required": ["userId", "teamName", "player1", "player2", "player3", "player4", "phone", "status", "createdAt"]
     },
     "TournamentInfo": {
       "title": "TournamentInfo",

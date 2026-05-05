@@ -1,16 +1,23 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle } from 'lucide-react';
+import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch, onSnapshot, where } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface Registration {
   id: string;
+  userId: string;
   teamName: string;
   player1: string;
+  player2: string;
+  player3: string;
+  player4: string;
+  phone: string;
+  status: 'pending' | 'approved' | 'denied';
+  denyReason?: string;
   createdAt: any;
 }
 
@@ -33,6 +40,7 @@ export default function Tournament({ user }: TournamentProps) {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [userRegistration, setUserRegistration] = useState<Registration | null>(null);
 
   useEffect(() => {
     fetchRegistrations();
@@ -44,8 +52,24 @@ export default function Tournament({ user }: TournamentProps) {
       }
     });
 
-    return () => unsub();
-  }, []);
+    // Subscribe to user's registration if logged in
+    let userUnsub = () => {};
+    if (user) {
+      const q = query(collection(db, 'tournamentRegistrations'), where('userId', '==', user.uid), limit(1));
+      userUnsub = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          setUserRegistration({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Registration);
+        } else {
+          setUserRegistration(null);
+        }
+      });
+    }
+
+    return () => {
+      unsub();
+      userUnsub();
+    };
+  }, [user]);
 
   useEffect(() => {
     if (activeTab === 'official') {
@@ -59,9 +83,15 @@ export default function Tournament({ user }: TournamentProps) {
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'tournamentRegistrations'), orderBy('createdAt', 'asc'), limit(12));
+      const baseQuery = collection(db, 'tournamentRegistrations');
+      let q;
+      if (isAdmin) {
+        q = query(baseQuery, orderBy('createdAt', 'asc'), limit(12));
+      } else {
+        q = query(baseQuery, where('status', '==', 'approved'), orderBy('createdAt', 'asc'), limit(12));
+      }
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Registration));
       setRegistrations(data);
     } catch (error) {
       console.error("Error fetching registrations:", error);
@@ -113,6 +143,7 @@ export default function Tournament({ user }: TournamentProps) {
       player3: formData.get('player3') as string,
       player4: formData.get('player4') as string,
       phone: formData.get('phone') as string,
+      status: 'pending',
       createdAt: serverTimestamp()
     };
 
@@ -213,18 +244,50 @@ export default function Tournament({ user }: TournamentProps) {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button 
-                    onClick={() => {
-                      if (!user) {
-                        toast.error("You must be logged in to register!");
-                        return;
-                      }
-                      setShowRegForm(true);
-                    }}
-                    className="btn-neon px-12 py-4 flex-1 text-center"
-                  >
-                    Initiate Registration
-                  </button>
+                  {userRegistration ? (
+                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+                       <div className="flex items-center justify-between mb-4">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Your Status</p>
+                         <span className={`px-3 py-1 rounded text-[10px] font-black uppercase border ${
+                           userRegistration.status === 'approved' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
+                           userRegistration.status === 'denied' ? 'bg-red/20 text-red border-red/30' :
+                           'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 animate-pulse'
+                         }`}>
+                           {userRegistration.status}
+                         </span>
+                       </div>
+                       <div className="space-y-3">
+                         <p className="text-xl font-black text-white italic truncate">{userRegistration.teamName}</p>
+                         {userRegistration.status === 'denied' && (
+                           <div className="p-4 bg-red/10 border border-red/20 rounded-xl space-y-1">
+                             <p className="text-[8px] font-black text-red uppercase tracking-widest opacity-60 italic">Denial Intel:</p>
+                             <p className="text-xs text-white font-bold italic leading-relaxed">
+                               {userRegistration.denyReason || 'No specific reason provided by Command.'}
+                             </p>
+                           </div>
+                         )}
+                         {userRegistration.status === 'pending' && (
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest italic flex items-center">
+                             <Clock className="w-3 h-3 mr-2 text-yellow-500" />
+                             Awaiting High-Table clearance...
+                           </p>
+                         )}
+                       </div>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        if (!user) {
+                          toast.error("You must be logged in to register!");
+                          return;
+                        }
+                        setShowRegForm(true);
+                      }}
+                      className="btn-neon px-12 py-4 flex-1 text-center"
+                    >
+                      Initiate Registration
+                    </button>
+                  )}
                 </div>
               </div>
 
