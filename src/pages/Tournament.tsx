@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch, onSnapshot } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface Registration {
@@ -12,6 +12,11 @@ interface Registration {
   teamName: string;
   player1: string;
   createdAt: any;
+}
+
+interface TournamentInfo {
+  winnerTeam: string;
+  victoryDate: string;
 }
 
 interface TournamentProps {
@@ -24,12 +29,22 @@ export default function Tournament({ user }: TournamentProps) {
   const [showRegForm, setShowRegForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [tournamentInfo, setTournamentInfo] = useState<TournamentInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     fetchRegistrations();
+    
+    // Subscribe to tournament info
+    const unsub = onSnapshot(doc(db, 'tournament_info', 'current'), (doc) => {
+      if (doc.exists()) {
+        setTournamentInfo(doc.data() as TournamentInfo);
+      }
+    });
+
+    return () => unsub();
   }, []);
 
   useEffect(() => {
@@ -262,8 +277,12 @@ export default function Tournament({ user }: TournamentProps) {
                     <Trophy className="w-16 h-16 text-yellow-500 animate-pulse" />
                     <div className="absolute inset-0 blur-xl bg-yellow-500/20 rounded-full"></div>
                   </div>
-                  <p className="text-2xl font-black text-white tracking-widest uppercase mb-1 underline decoration-yellow-500 text-center">Diabolic Death Squad</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Victory achieved on 24/04</p>
+                  <p className="text-2xl font-black text-white tracking-widest uppercase mb-1 underline decoration-yellow-500 text-center">
+                    {tournamentInfo?.winnerTeam || 'Diabolic Death Squad'}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">
+                    {tournamentInfo?.victoryDate ? `Victory achieved on ${tournamentInfo.victoryDate}` : 'Victory achieved on 24/04'}
+                  </p>
                 </div>
               </div>
 

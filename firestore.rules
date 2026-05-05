@@ -109,5 +109,10 @@ service cloud.firestore {
                     request.resource.data.keys().hasAll(['userId', 'teamName', 'player1', 'player2', 'player3', 'player4', 'phone', 'createdAt']);
       allow delete: if isAdmin();
     }
+
+    match /tournament_info/{infoId} {
+      allow read: if true; // Publicly readable
+      allow write: if isAdmin();
+    }
   }
 }

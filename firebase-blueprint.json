@@ -74,6 +74,17 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "teamName", "player1", "player2", "player3", "player4", "phone", "createdAt"]
+    },
+    "TournamentInfo": {
+      "title": "TournamentInfo",
+      "description": "General tournament information and winner details",
+      "type": "object",
+      "properties": {
+        "winnerTeam": { "type": "string" },
+        "victoryDate": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["winnerTeam", "victoryDate", "updatedAt"]
     }
   },
   "firestore": {
@@ -96,6 +107,10 @@
     "/tournamentRegistrations/{registrationId}": {
       "schema": "TournamentRegistration",
       "description": "Registration for tournament"
+    },
+    "/tournament_info/{infoId}": {
+      "schema": "TournamentInfo",
+      "description": "Tournament metadata and winner info"
     }
   }
 }
