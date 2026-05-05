@@ -57,20 +57,36 @@ export default function Admin({ user }: AdminProps) {
     }
   };
 
-  const updateTournamentInfo = async (e: React.FormEvent) => {
+  const updateWinnerInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdating('tournament');
+    setIsUpdating('winner');
     try {
       await setDoc(doc(db, 'tournament_info', 'current'), {
         winnerTeam,
         victoryDate,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      toast.success("Tournament winner updated successfully!");
+    } catch (error) {
+      console.error("Error updating winner info:", error);
+      toast.error("Failed to update tournament info.");
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const updateAlertText = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating('alert');
+    try {
+      await setDoc(doc(db, 'tournament_info', 'current'), {
         scrollingText,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      toast.success("Settings updated successfully!");
+      toast.success("Alert scroll text updated successfully!");
     } catch (error) {
-      console.error("Error updating tournament info:", error);
-      toast.error("Failed to update tournament info.");
+      console.error("Error updating alert text:", error);
+      toast.error("Failed to update alert text.");
     } finally {
       setIsUpdating(null);
     }
@@ -434,85 +450,124 @@ export default function Admin({ user }: AdminProps) {
            </div>
          ) : (
           <div className="p-8 lg:p-12">
-            <div className="max-w-2xl">
-              <div className="flex items-center space-x-3 mb-8">
-                <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
-                  <Flag className="w-6 h-6 text-cyan" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black uppercase italic">Tournament <span className="text-cyan">Information</span></h3>
-                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Update previous week winner and other operational intel</p>
-                </div>
-              </div>
-
-              <form onSubmit={updateTournamentInfo} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Previous Week Winner Team</label>
-                    <input 
-                      type="text" 
-                      value={winnerTeam}
-                      onChange={e => setWinnerTeam(e.target.value)}
-                      placeholder="e.g. Diabolic Death Squad"
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
-                      required
-                    />
+            <div className="max-w-2xl space-y-12">
+              {/* Section 1: Tournament Winner Info */}
+              <div className="space-y-8">
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
+                    <Trophy className="w-6 h-6 text-cyan" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Victory Date</label>
-                    <input 
-                      type="text" 
-                      value={victoryDate}
-                      onChange={e => setVictoryDate(e.target.value)}
-                      placeholder="e.g. 24/04"
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
-                      required
-                    />
+                  <div>
+                    <h3 className="text-xl font-black uppercase italic">Winner <span className="text-cyan">Information</span></h3>
+                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Update previous week winner credentials</p>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alert Scroll Text</label>
-                  <textarea 
-                    value={scrollingText}
-                    onChange={e => setScrollingText(e.target.value)}
-                    placeholder="Enter the alert text that scrolls on the home page..."
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[100px] resize-none"
-                    required
-                  />
-                </div>
+                <form onSubmit={updateWinnerInfo} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Winner Team Name</label>
+                      <input 
+                        type="text" 
+                        value={winnerTeam}
+                        onChange={e => setWinnerTeam(e.target.value)}
+                        placeholder="e.g. Diabolic Death Squad"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Victory Date</label>
+                      <input 
+                        type="text" 
+                        value={victoryDate}
+                        onChange={e => setVictoryDate(e.target.value)}
+                        placeholder="e.g. 24/04"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                        required
+                      />
+                    </div>
+                  </div>
 
-                <div className="pt-4">
                   <button 
                     type="submit" 
-                    disabled={isUpdating === 'tournament'}
-                    className="btn-cyan px-12 py-4 flex items-center justify-center space-x-2"
+                    disabled={isUpdating === 'winner'}
+                    className="btn-cyan px-10 py-3 flex items-center justify-center space-x-2"
                   >
-                    {isUpdating === 'tournament' ? (
+                    {isUpdating === 'winner' ? (
                       <span className="h-4 w-4 border-2 border-dark/20 border-t-dark rounded-full animate-spin"></span>
                     ) : (
                       <>
                         <Zap className="w-4 h-4" />
-                        <span className="font-black uppercase tracking-widest">Deploy Updates</span>
+                        <span className="font-black uppercase tracking-widest text-[10px]">Update Winner</span>
                       </>
                     )}
                   </button>
-                </div>
-              </form>
+                </form>
+              </div>
 
-              <div className="mt-12 p-6 bg-cyan/5 border border-cyan/10 rounded-2xl border-dashed">
-                <h4 className="text-[10px] font-black text-cyan uppercase tracking-widest mb-2 flex items-center">
+              {/* Section 2: Alert Scroll Text */}
+              <div className="space-y-8">
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
+                    <Flag className="w-6 h-6 text-cyan" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black uppercase italic">Alert <span className="text-cyan">Scroll Text</span></h3>
+                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Update global scrolling broadcast message</p>
+                  </div>
+                </div>
+
+                <form onSubmit={updateAlertText} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Scroll Content</label>
+                    <textarea 
+                      value={scrollingText}
+                      onChange={e => setScrollingText(e.target.value)}
+                      placeholder="Enter broadcast message..."
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[120px] resize-none"
+                      required
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={isUpdating === 'alert'}
+                    className="btn-cyan px-10 py-3 flex items-center justify-center space-x-2"
+                  >
+                    {isUpdating === 'alert' ? (
+                      <span className="h-4 w-4 border-2 border-dark/20 border-t-dark rounded-full animate-spin"></span>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4" />
+                        <span className="font-black uppercase tracking-widest text-[10px]">Update Scroll Text</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              {/* Live Preview Section */}
+              <div className="mt-12 p-8 bg-cyan/5 border border-cyan/10 rounded-[2rem] border-dashed">
+                <h4 className="text-[10px] font-black text-cyan uppercase tracking-widest mb-4 flex items-center">
                   <Shield className="w-3 h-3 mr-2" />
-                  Live Preview Data:
+                  Live Intel Preview:
                 </h4>
-                <div className="flex items-center space-x-4">
-                   <div className="p-3 bg-white/5 rounded-full">
-                     <Trophy className="w-6 h-6 text-yellow-500" />
-                   </div>
-                   <div>
-                     <p className="text-lg font-black uppercase text-white">{winnerTeam || '---'}</p>
-                     <p className="text-[10px] text-gray-500 font-bold uppercase">Achieved on: {victoryDate || '---'}</p>
-                   </div>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                     <div className="p-3 bg-white/5 rounded-full">
+                       <Trophy className="w-6 h-6 text-yellow-500" />
+                     </div>
+                     <div>
+                       <p className="text-lg font-black uppercase text-white">{winnerTeam || '---'}</p>
+                       <p className="text-[10px] text-gray-500 font-bold uppercase">Victory: {victoryDate || '---'}</p>
+                     </div>
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-[10px] text-cyan font-bold uppercase leading-relaxed opacity-70 italic line-clamp-2">
+                       {scrollingText || 'No alert text set...'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
