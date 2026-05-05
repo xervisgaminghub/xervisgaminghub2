@@ -120,7 +120,11 @@ export default function Dashboard({ user }: DashboardProps) {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-cyan">{order.price} BDT</p>
-                    <span className={`text-[10px] uppercase tracking-widest font-black ${order.status === 'completed' ? 'text-green-500' : 'text-yellow-500'}`}>
+                    <span className={`text-[10px] uppercase tracking-widest font-black ${
+                      order.status === 'completed' ? 'text-green-500' : 
+                      order.status === 'failed' ? 'text-red' : 
+                      'text-yellow-500'
+                    }`}>
                       {order.status}
                     </span>
                   </div>

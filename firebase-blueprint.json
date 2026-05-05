@@ -31,7 +31,7 @@
         "uid": { "type": "string", "description": "Game UID" },
         "transactionId": { "type": "string" },
         "paymentMethod": { "type": "string" },
-        "status": { "type": "string", "enum": ["processing", "completed", "cancelled"] },
+        "status": { "type": "string", "enum": ["processing", "completed", "failed", "cancelled"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "productName", "price", "uid", "transactionId", "paymentMethod", "status", "createdAt"]

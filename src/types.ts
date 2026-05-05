@@ -22,7 +22,7 @@ export interface Order {
   uid: string;
   transactionId: string;
   paymentMethod: string;
-  status: 'processing' | 'completed' | 'cancelled';
+  status: 'processing' | 'completed' | 'failed' | 'cancelled';
   createdAt: string;
 }
 

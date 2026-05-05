@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle } from 'lucide-react';
 
 interface AdminProps {
   user: UserProfile;
@@ -148,8 +148,7 @@ export default function Admin({ user }: AdminProps) {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'processing' ? 'completed' : 'processing';
+  const updateOrderStatus = async (orderId: string, newStatus: 'completed' | 'failed') => {
     setIsUpdating(orderId);
     try {
       await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
@@ -385,20 +384,37 @@ export default function Admin({ user }: AdminProps) {
                        </div>
                      </td>
                      <td className="px-6 py-4 text-[10px] text-gray-500 uppercase font-bold tracking-tighter">
-                       <div className={`flex items-center space-x-2 ${o.status === 'completed' ? 'text-green-500' : 'text-yellow-500'}`}>
-                         {o.status === 'completed' ? <CheckCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                       <div className={`flex items-center space-x-2 ${
+                         o.status === 'completed' ? 'text-green-500' : 
+                         o.status === 'failed' ? 'text-red' : 
+                         'text-yellow-500'
+                       }`}>
+                         {o.status === 'completed' ? <CheckCircle className="w-4 h-4" /> : 
+                          o.status === 'failed' ? <XCircle className="w-4 h-4" /> : 
+                          <Clock className="w-4 h-4" />}
                          <span className="font-black tracking-widest">{o.status}</span>
                        </div>
                      </td>
                      <td className="px-6 py-4 text-right">
                        <div className="flex items-center justify-end space-x-2">
-                         <button 
-                           onClick={() => updateOrderStatus(o.id!, o.status)}
-                           className={`p-2 rounded-lg transition-colors ${o.status === 'completed' ? 'text-yellow-500 hover:bg-yellow-500/20' : 'text-green-500 hover:bg-green-500/20'}`}
-                           title="Toggle Status"
-                         >
-                           <CheckCircle className="w-4 h-4" />
-                         </button>
+                         {o.status === 'processing' && (
+                           <>
+                             <button 
+                               onClick={() => updateOrderStatus(o.id!, 'completed')}
+                               className="p-2 hover:bg-green-500/20 text-green-500 rounded-lg transition-colors"
+                               title="Mark Completed"
+                             >
+                               <CheckCircle className="w-4 h-4" />
+                             </button>
+                             <button 
+                               onClick={() => updateOrderStatus(o.id!, 'failed')}
+                               className="p-2 hover:bg-red/20 text-red rounded-lg transition-colors"
+                               title="Mark Failed"
+                             >
+                               <XCircle className="w-4 h-4" />
+                             </button>
+                           </>
+                         )}
                          <button 
                            onClick={() => deleteOrder(o.id!)}
                            className="p-2 hover:bg-red/20 text-red rounded-lg transition-colors"
