@@ -82,6 +82,7 @@
       "properties": {
         "winnerTeam": { "type": "string" },
         "victoryDate": { "type": "string" },
+        "scrollingText": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["winnerTeam", "victoryDate", "updatedAt"]

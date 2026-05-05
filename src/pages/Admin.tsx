@@ -23,6 +23,7 @@ export default function Admin({ user }: AdminProps) {
   // Tournament Info State
   const [winnerTeam, setWinnerTeam] = useState('');
   const [victoryDate, setVictoryDate] = useState('');
+  const [scrollingText, setScrollingText] = useState('');
 
   // Password Lock State
   const [passcode, setPasscode] = useState('');
@@ -47,6 +48,7 @@ export default function Admin({ user }: AdminProps) {
         const data = infoDoc.data();
         setWinnerTeam(data.winnerTeam || '');
         setVictoryDate(data.victoryDate || '');
+        setScrollingText(data.scrollingText || '');
       }
     } catch (error) {
       console.error("Error fetching tournament info:", error);
@@ -62,9 +64,10 @@ export default function Admin({ user }: AdminProps) {
       await setDoc(doc(db, 'tournament_info', 'current'), {
         winnerTeam,
         victoryDate,
+        scrollingText,
         updatedAt: serverTimestamp()
       }, { merge: true });
-      toast.success("Tournament winner updated successfully!");
+      toast.success("Settings updated successfully!");
     } catch (error) {
       console.error("Error updating tournament info:", error);
       toast.error("Failed to update tournament info.");
@@ -466,6 +469,17 @@ export default function Admin({ user }: AdminProps) {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Alert Scroll Text</label>
+                  <textarea 
+                    value={scrollingText}
+                    onChange={e => setScrollingText(e.target.value)}
+                    placeholder="Enter the alert text that scrolls on the home page..."
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[100px] resize-none"
+                    required
+                  />
                 </div>
 
                 <div className="pt-4">

@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
+import AdSense from '../components/AdSense';
 
 interface HomeProps {
   user: UserProfile | null;
@@ -22,6 +23,21 @@ const HUB_LINKS = [
 
 export default function Home({ user }: HomeProps) {
   const [stats, setStats] = useState({ purchases: 0 });
+  const [scrollingText, setScrollingText] = useState('🔥 Welcome to Xervis Gaming Hub 🎮 | Play • Earn • Redeem 💰 | 💎 Free Fire Diamond Top-Up Available Now ⚡ | 🎁 Watch Ads & Unlock Free Downloads | 🏆 Level Up System Active – Reach Diamond & Crown 👑 | 💸 10 Points = 1 BDT | 🎯 Daily Earning সুযোগ চলছে | 🚨 AdBlock বন্ধ না করলে Download Unlock হবে না ❌ | 🎮 Mini Games খেলুন এবং প্রতি মিনিটে Point Earn করুন | 📡 Live Tournament Updates Coming Soon | 🚀 Join Now & Start Earning Today!');
+
+  useEffect(() => {
+    // Subscribe to tournament info for scrolling text
+    const unsub = onSnapshot(doc(db, 'tournament_info', 'current'), (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        if (data.scrollingText) {
+          setScrollingText(data.scrollingText);
+        }
+      }
+    });
+
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -84,7 +100,7 @@ export default function Home({ user }: HomeProps) {
               <span className="ml-2 text-[10px] font-black uppercase tracking-widest">Alert</span>
             </div>
             <div className="scrolling-text text-[10px] font-bold text-cyan uppercase tracking-[0.2em] w-full">
-              🔥 Welcome to Xervis Gaming Hub 🎮 | Play • Earn • Redeem 💰 | 💎 Free Fire Diamond Top-Up Available Now ⚡ | 🎁 Watch Ads & Unlock Free Downloads | 🏆 Level Up System Active – Reach Diamond & Crown 👑 | 💸 10 Points = 1 BDT | 🎯 Daily Earning সুযোগ চলছে | 🚨 AdBlock বন্ধ না করলে Download Unlock হবে না ❌ | 🎮 Mini Games খেলুন এবং প্রতি মিনিটে Point Earn করুন | 📡 Live Tournament Updates Coming Soon | 🚀 Join Now & Start Earning Today!
+              {scrollingText}
             </div>
           </div>
         </div>
@@ -116,6 +132,12 @@ export default function Home({ user }: HomeProps) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Home Page Ad Slot */}
+      <div className="mb-12 glass border-white/5 p-4 rounded-[2rem] overflow-hidden">
+        <p className="text-[8px] text-gray-600 font-bold uppercase tracking-[0.3em] mb-2 text-center">Sponsored Intel</p>
+        <AdSense slot="YOUR_AD_SLOT_HERE" />
       </div>
 
       {/* Navigation Matrix Header */}
