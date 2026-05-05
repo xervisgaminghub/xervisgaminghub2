@@ -34,7 +34,12 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && 
-         (request.auth.token.email == "sajewel132@gmail.com" && request.auth.token.email_verified == true);
+         (request.auth.token.email == "sajewel132@gmail.com" || 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin');
+    }
+
+    function isMainAdmin() {
+      return isAuthenticated() && request.auth.token.email == "sajewel132@gmail.com";
     }
 
     function isValidEmail(email) {
@@ -67,20 +72,29 @@ service cloud.firestore {
       
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       
-      // Update rule for owner
+      // Update rule for owner (points/level/role locked)
       allow update: if isOwner(userId) && 
                     isValidUser(request.resource.data) && 
                     request.resource.data.points == resource.data.points && 
                     request.resource.data.level == resource.data.level &&
+                    request.resource.data.get('role', 'user') == resource.data.get('role', 'user') &&
                     (!('referralCount' in resource.data) || request.resource.data.referralCount == resource.data.referralCount);
       
-      // Update rule for referral rewards (allowing non-owners to increment points/referralCount)
+      // Update rule for referral rewards
       allow update: if isAuthenticated() && 
                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points', 'referralCount']) &&
                     request.resource.data.points == resource.data.points + 20 &&
                     request.resource.data.referralCount == (resource.data.get('referralCount', 0) + 1);
 
-      allow update: if isAdmin();
+      // MAIN ADMIN: Can change anything for others
+      allow update: if isMainAdmin() && (resource.data.email != "sajewel132@gmail.com" || (request.resource.data.role == "admin" && request.resource.data.email == "sajewel132@gmail.com"));
+      
+      // OTHER ADMINS: Can change anything except roles and cannot touch main admin
+      allow update: if isAdmin() && 
+                    !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) && 
+                    resource.data.email != "sajewel132@gmail.com";
+
+      allow delete: if isMainAdmin() && resource.data.email != "sajewel132@gmail.com";
     }
 
     match /orders/{orderId} {

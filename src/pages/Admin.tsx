@@ -106,7 +106,17 @@ export default function Admin({ user }: AdminProps) {
     }
   };
 
-  const updateUserRole = async (targetUserId: string, currentRole: string | undefined) => {
+  const updateUserRole = async (targetUserId: string, targetEmail: string, currentRole: string | undefined) => {
+    if (user.email !== 'sajewel132@gmail.com') {
+      toast.error("Only the Main Admin can manage roles.");
+      return;
+    }
+
+    if (targetEmail === 'sajewel132@gmail.com') {
+      toast.error("Main Admin role cannot be modified.");
+      return;
+    }
+
     setIsUpdating(targetUserId);
     try {
       const newRole = currentRole === 'admin' ? 'user' : 'admin';
@@ -322,10 +332,22 @@ export default function Admin({ user }: AdminProps) {
                            <Edit className="w-4 h-4" />
                          </button>
                          <button 
-                           onClick={() => updateUserRole(u.uid, u.role)}
-                           disabled={isUpdating === u.uid}
-                           className={`p-2 rounded-lg transition-colors ${u.role === 'admin' ? 'text-red hover:bg-red/20' : 'text-gray-400 hover:bg-white/10'}`}
-                           title={u.role === 'admin' ? "Remove Admin" : "Make Admin"}
+                           onClick={() => updateUserRole(u.uid, u.email, u.role)}
+                           disabled={isUpdating === u.uid || user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com'}
+                           className={`p-2 rounded-lg transition-colors ${
+                             u.role === 'admin' 
+                               ? 'text-red hover:bg-red/20' 
+                               : 'text-gray-400 hover:bg-white/10'
+                           } ${
+                             (user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
+                           }`}
+                           title={
+                             u.email === 'sajewel132@gmail.com' 
+                               ? "Permanent Admin" 
+                               : user.email !== 'sajewel132@gmail.com'
+                                 ? "Main Admin clearance required"
+                                 : u.role === 'admin' ? "Remove Admin" : "Make Admin"
+                           }
                          >
                            <Shield className="w-4 h-4" />
                          </button>

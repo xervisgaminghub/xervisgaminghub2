@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
-  const isAdmin = user?.email === 'sajewel132@gmail.com';
+  const isAdmin = user?.email === 'sajewel132@gmail.com' || user?.role === 'admin';
 
   return (
     <AuthContext.Provider value={{ user, firebaseUser, loading, logout, isAdmin }}>
