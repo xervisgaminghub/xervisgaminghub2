@@ -51,18 +51,74 @@ export default function Admin({ user }: AdminProps) {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const [usersSnap, ordersSnap, transSnap] = await Promise.all([
-        getDocs(query(collection(db, 'users'), limit(500))),
-        getDocs(query(collection(db, 'orders'), limit(500), orderBy('createdAt', 'desc'))),
-        getDocs(query(collection(db, 'transactions'), limit(1000), orderBy('createdAt', 'desc')))
-      ]);
+      // 1. Fetch Users
+      let usersData: any[] = [];
+      try {
+        const usersSnap = await getDocs(query(collection(db, 'users'), limit(500)));
+        usersData = usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+      } catch (err) {
+        console.error("Users fetch error:", err);
+      }
 
-      setUsers(usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
-      setOrders(ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
-      setTransactions(transSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      // 2. Fetch Orders
+      let ordersData: any[] = [];
+      try {
+        const ordersSnap = await getDocs(query(collection(db, 'orders'), limit(500)));
+        ordersData = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (err) {
+        console.error("Orders fetch error:", err);
+      }
+
+      // 3. Fetch Transactions / Points
+      let transData: any[] = [];
+      
+      // Helper to format date safely
+      const getSafeDate = (d: any) => {
+        if (!d) return null;
+        if (typeof d === 'string') return d;
+        if (d.toDate && typeof d.toDate === 'function') return d.toDate().toISOString();
+        if (d.seconds) return new Date(d.seconds * 1000).toISOString();
+        return null;
+      };
+
+      try {
+        const pointsSnap = await getDocs(query(collection(db, 'points'), limit(500)));
+        const pointsMapped = pointsSnap.docs.map(doc => {
+          const d = doc.data();
+          return { 
+            id: doc.id, 
+            ...d,
+            createdAt: getSafeDate(d.createdAt),
+            type: d.type || (d.amount !== undefined ? (d.amount >= 0 ? 'earn' : 'burn') : 'earn'), 
+            points: d.points || Math.abs(d.amount || 0)
+          };
+        });
+        transData = [...pointsMapped];
+      } catch (err) {
+        console.warn("Points collection read failed:", err);
+      }
+
+      try {
+        const transSnap = await getDocs(query(collection(db, 'transactions'), limit(500)));
+        const transMapped = transSnap.docs.map(doc => {
+          const d = doc.data();
+          return { 
+            id: doc.id, 
+            ...d,
+            createdAt: getSafeDate(d.createdAt)
+          };
+        });
+        transData = [...transData, ...transMapped];
+      } catch (err) {
+        console.warn("Transactions collection read failed:", err);
+      }
+
+      setUsers(usersData);
+      setOrders(ordersData);
+      setTransactions(transData);
     } catch (error) {
-      console.error("Error fetching analytics:", error);
-      toast.error("Failed to load analytics data.");
+      console.error("Global analytics fetch error:", error);
+      toast.error("Partial analytics data loaded.");
     } finally {
       setLoading(false);
     }
@@ -175,10 +231,10 @@ export default function Admin({ user }: AdminProps) {
 
     const pointHistory = last7Days.map(date => {
       const earned = transactions
-        .filter(t => t.createdAt && typeof t.createdAt === 'string' && t.createdAt.startsWith(date) && t.type === 'earn')
+        .filter(t => t.createdAt && typeof t.createdAt === 'string' && t.createdAt.startsWith(date) && (t.type === 'earn' || t.type === 'reward'))
         .reduce((sum, t) => sum + (t.points || 0), 0);
       const spent = transactions
-        .filter(t => t.createdAt && typeof t.createdAt === 'string' && t.createdAt.startsWith(date) && t.type === 'burn')
+        .filter(t => t.createdAt && typeof t.createdAt === 'string' && t.createdAt.startsWith(date) && (t.type === 'burn' || t.type === 'spend' || t.type === 'purchase'))
         .reduce((sum, t) => sum + (t.points || 0), 0);
       return { date, earned, spent };
     });
