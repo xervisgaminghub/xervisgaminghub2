@@ -70,12 +70,12 @@ export default function Home({ user }: HomeProps) {
           <div className="h-[300px] rounded-3xl border border-white/5 relative overflow-hidden flex items-end p-8 group shadow-[0_0_50px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-0 z-0">
               <img 
-                src="https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&q=80&w=1000" 
-                alt="Cosmic Hero" 
-                className="w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000 grayscale select-none"
+                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000" 
+                alt="Gaming Hero" 
+                className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 grayscale group-hover:grayscale-0 select-none"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#020408] via-[#020408]/60 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#010204]/60 to-transparent"></div>
             </div>
             
             <div className="relative z-10">
@@ -83,11 +83,11 @@ export default function Home({ user }: HomeProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <h1 className="text-5xl font-black leading-none mb-2 tracking-tighter drop-shadow-[0_0_15px_rgba(0,229,255,0.3)]">COSMIC <span className="text-cyan">HUB</span></h1>
-                <p className="text-gray-400 mb-6 max-w-md font-bold uppercase text-[10px] tracking-widest leading-relaxed">System transitioned to Starfield Sector. Command matrix recalibrated for zero-gravity operations.</p>
+                <h1 className="text-5xl font-black leading-none mb-2 tracking-tighter drop-shadow-[0_0_20px_rgba(0,229,255,0.4)]">XERVIS <span className="text-cyan">ELITE</span></h1>
+                <p className="text-gray-400 mb-6 max-w-md font-bold uppercase text-[10px] tracking-widest leading-relaxed">High-performance resource node activated. Terminal synchronized for competitive integration and rapid deployment.</p>
                 <div className="flex gap-4">
-                  <Link to="/store" className="bg-cyan/80 backdrop-blur-md text-dark px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(0,229,255,0.4)] hover:bg-cyan hover:scale-105 transition-all">Quick Recharge</Link>
-                  <Link to="/tournament" className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">Active Events</Link>
+                  <Link to="/store" className="bg-cyan/80 backdrop-blur-md text-dark px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(0,229,255,0.4)] hover:bg-cyan hover:scale-105 transition-all">Procure Assets</Link>
+                  <Link to="/tournament" className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">Elite Events</Link>
                 </div>
               </motion.div>
             </div>

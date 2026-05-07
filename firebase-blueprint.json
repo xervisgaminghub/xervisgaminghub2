@@ -12,6 +12,7 @@
         "phone": { "type": "string" },
         "username": { "type": "string" },
         "points": { "type": "integer" },
+        "lastSpinAt": { "type": "string", "format": "date-time" },
         "level": { "type": "string", "enum": ["Silver", "Bronze", "Gold", "Platinum", "Diamond", "Crown", "Elite Crown"] },
         "referralCode": { "type": "string" },
         "referredBy": { "type": "string" },

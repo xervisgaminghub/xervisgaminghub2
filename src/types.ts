@@ -6,6 +6,7 @@ export interface UserProfile {
   phone?: string;
   username: string;
   points: number;
+  lastSpinAt?: any;
   level: string;
   referralCode: string;
   referredBy?: string;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { LogOut, Menu, X, Home, ShoppingBag, Zap, LayoutDashboard, Newspaper, Trophy, Info, FileText, Youtube, Send, Instagram, Facebook, MessageSquare, Shield } from 'lucide-react';
+import { LogOut, Menu, X, Home, ShoppingBag, Zap, LayoutDashboard, Newspaper, Trophy, Info, FileText, Youtube, Send, Instagram, Facebook, MessageSquare, Shield, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -13,9 +13,9 @@ const NAV_LINKS = [
   { name: 'Home', path: '/', icon: Home },
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Products', path: '/store', icon: ShoppingBag },
+  { name: 'Rankings', path: '/leaderboard', icon: ListTodo },
   { name: 'Tournament', path: '/tournament', icon: Trophy },
   { name: 'About', path: '/about', icon: Info },
-  { name: 'Terms', path: '/terms', icon: FileText },
 ];
 
 const SOCIAL_LINKS = [

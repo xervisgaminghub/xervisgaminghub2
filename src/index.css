@@ -3,11 +3,11 @@
 @theme {
   --color-cyan: #00E5FF;
   --color-red: #FF3B3F;
-  --color-dark: #020408;
+  --color-dark: #010204;
   --color-deep: #05070a;
-  --color-cosmic: #1a1a2e;
-  --color-glass: rgba(5, 7, 10, 0.7);
-  --color-glass-border: rgba(0, 229, 255, 0.1);
+  --color-cosmic: #0a0a1a;
+  --color-glass: rgba(1, 2, 4, 0.82);
+  --color-glass-border: rgba(0, 229, 255, 0.15);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   @keyframes shake {
@@ -18,23 +18,27 @@
   --animate-shake: shake 0.2s ease-in-out infinite;
 
   @keyframes pulse-glow {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.05); }
+    0%, 100% { opacity: 0.1; transform: scale(1); }
+    50% { opacity: 0.25; transform: scale(1.05); }
   }
-  --animate-pulse-glow: pulse-glow 8s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 12s ease-in-out infinite;
 
-  @keyframes twinkle {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.3; transform: scale(0.8); }
+  @keyframes sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
   }
-  --animate-twinkle: twinkle 4s ease-in-out infinite;
+  --animate-sweep: sweep 8s ease-in-out infinite;
 }
 
 @layer base {
   body {
     @apply text-white font-sans selection:bg-cyan selection:text-dark;
-    background: radial-gradient(circle at top right, #0a0a1a 0%, #020408 100%);
+    background-color: #010204;
+    background-image: 
+      radial-gradient(circle at 50% 0%, #0a0a25 0%, transparent 40%),
+      linear-gradient(to bottom, #010204, #05070a);
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {

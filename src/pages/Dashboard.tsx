@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-import { getPointsToNextRank } from '../lib/rankUtils';
+import { getPointsToNextRank, getRank } from '../lib/rankUtils';
 
 interface DashboardProps {
   user: UserProfile;
@@ -20,6 +20,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [loading, setLoading] = useState(true);
 
   const { nextRank, pointsNeeded, progress } = getPointsToNextRank(user.points);
+  const currentRank = getRank(user.points);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -60,31 +61,36 @@ export default function Dashboard({ user }: DashboardProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
         {/* Points Card */}
-        <div className="stat-panel relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+        <div className="stat-panel relative overflow-hidden group shadow-[0_0_30px_rgba(0,0,0,0.5)] border-white/10 hover:border-cyan/30 transition-all">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
             <Zap className="w-16 h-16 text-cyan" />
           </div>
-          <p className="stat-label mb-1">Total Points</p>
-          <h2 className="stat-value text-4xl mb-2">{user.points.toLocaleString()}</h2>
-          <div className="flex items-center space-x-2 text-[10px] text-cyan font-bold uppercase tracking-widest">
-            <Gift className="w-3 h-3" />
-            <span>{user.points / 10} BDT Value</span>
+          <p className="stat-label mb-1 text-gray-600">Reserved Credits</p>
+          <h2 className="stat-value text-5xl mb-2 italic tracking-tighter drop-shadow-[0_0_10px_rgba(0,229,255,0.2)]">{user.points.toLocaleString()}</h2>
+          <div className="flex items-center space-x-2 text-[9px] text-cyan/50 font-black uppercase tracking-widest">
+            <div className="w-1 h-1 bg-cyan rounded-full animate-pulse" />
+            <span>Sector Value: {(user.points / 10).toFixed(0)} Credits</span>
           </div>
         </div>
 
           {/* Level Card */}
-        <div className="stat-panel border-white/5 relative overflow-hidden group lg:col-span-3 bg-black/40 backdrop-blur-3xl shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]">
+        <div className="stat-panel border-white/5 relative overflow-hidden group lg:col-span-3 bg-black/60 shadow-[inset_0_0_30px_rgba(0,229,255,0.03)] neon-border">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Trophy className="w-16 h-16 text-cyan" />
           </div>
-          <p className="stat-label mb-1">Current Level</p>
-          <h2 className="text-4xl font-black text-cyan drop-shadow-[0_0_15px_rgba(0,229,255,0.3)] mb-2">{user.level}</h2>
-          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
-            <div className="bg-cyan h-full shadow-[0_0_10px_rgba(0,229,255,0.5)]" style={{ width: `${progress}%` }}></div>
+          <p className="stat-label mb-1">Combat Rating / Rank</p>
+          <h2 className={`text-5xl font-black drop-shadow-[0_0_15px_rgba(0,229,255,0.3)] mb-2 italic ${currentRank.color.split(' ')[0]}`}>{currentRank.name}</h2>
+          <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5 relative">
+            <div className="bg-cyan h-full shadow-[0_0_10px_rgba(0,229,255,0.5)] transition-all duration-1000" style={{ width: `${progress}%` }}>
+                <div className="absolute top-0 right-0 w-1 h-full bg-white animate-pulse" />
+            </div>
           </div>
-          <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-bold">
-            {nextRank ? `${pointsNeeded} points to reach ${nextRank}` : 'Maximum Rank Attained'}
-          </p>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold font-mono">
+              {nextRank ? `${pointsNeeded} pts to next authorization` : 'Maximum Authorization Level'}
+            </p>
+            <span className="text-[10px] font-black text-cyan italic">{progress}%</span>
+          </div>
         </div>
 
         {isAdmin && (

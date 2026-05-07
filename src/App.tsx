@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import Leaderboard from './pages/Leaderboard';
 import Store from './pages/Store';
 import Terms from './pages/Terms';
 import Tournament from './pages/Tournament';
@@ -18,6 +19,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import WhatsAppButton from './components/layout/WhatsAppButton';
 import AnnouncementBanner from './components/layout/AnnouncementBanner';
+import DailySpin from './components/rewards/DailySpin';
 import LoadingScreen from './components/ui/LoadingScreen';
 import StarField from './components/ui/StarField';
 import AdBlockDetector from './components/ui/AdBlockDetector';
@@ -71,6 +73,7 @@ function AppRoutes() {
       <StarField />
       <AdBlockDetector />
       <AnnouncementBanner />
+      {user && <DailySpin user={user} />}
       <Navbar user={user} />
       <main className="flex-grow">
         <Routes>
@@ -83,6 +86,7 @@ function AppRoutes() {
           
           {/* Public Routes */}
           <Route path="/store" element={<Store user={user} />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/tournament" element={<Tournament user={user} />} />
           <Route path="/about" element={<About />} />
