@@ -86,9 +86,10 @@
         "winnerTeam": { "type": "string" },
         "victoryDate": { "type": "string" },
         "scrollingText": { "type": "string" },
+        "registrationActive": { "type": "boolean" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["winnerTeam", "victoryDate", "updatedAt"]
+      "required": ["winnerTeam", "victoryDate", "registrationActive", "updatedAt"]
     },
     "Announcement": {
       "title": "Announcement",

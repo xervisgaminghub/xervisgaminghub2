@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock } from 'lucide-react';
+import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch, onSnapshot, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch, onSnapshot, where, updateDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface Registration {
@@ -24,6 +24,8 @@ interface Registration {
 interface TournamentInfo {
   winnerTeam: string;
   victoryDate: string;
+  scrollingText: string;
+  registrationActive: boolean;
 }
 
 interface TournamentProps {
@@ -97,6 +99,50 @@ export default function Tournament({ user }: TournamentProps) {
       console.error("Error fetching registrations:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateTournamentInfo = async (updates: Partial<TournamentInfo>) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, 'tournament_info', 'current'), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      toast.success("Tournament protocol updated.");
+    } catch (error) {
+      console.error("Error updating tournament info:", error);
+      toast.error("Failed to update tournament protocol.");
+    }
+  };
+
+  const deleteRegistration = async (id: string) => {
+    if (!isAdmin) return;
+    if (!window.confirm("Terminate this registration data?")) return;
+
+    try {
+      await deleteDoc(doc(db, 'tournamentRegistrations', id));
+      toast.success("Registration data purged.");
+      fetchRegistrations();
+    } catch (error) {
+      console.error("Error deleting registration:", error);
+      toast.error("Process termination failed.");
+    }
+  };
+
+  const updateRegistrationStatus = async (id: string, status: 'approved' | 'denied', denyReason?: string) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, 'tournamentRegistrations', id), {
+        status,
+        ...(denyReason && { denyReason }),
+        updatedAt: serverTimestamp()
+      });
+      toast.success(`Registration status set to ${status}.`);
+      fetchRegistrations();
+    } catch (error) {
+      console.error("Error updating registration status:", error);
+      toast.error("Status update protocol error.");
     }
   };
 
@@ -220,6 +266,65 @@ export default function Tournament({ user }: TournamentProps) {
             exit={{ opacity: 0, y: -20 }}
             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           >
+            {/* Admin Controls Panel */}
+            {isAdmin && (
+              <div className="col-span-full glass p-8 rounded-3xl border-cyan/30 bg-cyan/5 mb-8">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="w-6 h-6 text-cyan" />
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Command Control Panel</h3>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button 
+                      onClick={() => updateTournamentInfo({ registrationActive: !tournamentInfo?.registrationActive })}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        tournamentInfo?.registrationActive 
+                          ? 'bg-red text-white shadow-[0_0_20px_#FF3B3F]/30' 
+                          : 'bg-emerald-500 text-white shadow-[0_0_20px_#10b981]/30'
+                      }`}
+                    >
+                      {tournamentInfo?.registrationActive ? 'DEACTIVATE REG' : 'ACTIVATE REG'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const team = prompt("Winner Team Name:", tournamentInfo?.winnerTeam);
+                        const date = prompt("Victory Date:", tournamentInfo?.victoryDate);
+                        const text = prompt("Scrolling Text:", tournamentInfo?.scrollingText);
+                        if (team && date) updateTournamentInfo({ winnerTeam: team, victoryDate: date, scrollingText: text || '' });
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                    >
+                      Edit Intel
+                    </button>
+                    <button 
+                      onClick={clearRegistrations}
+                      disabled={isClearing}
+                      className="bg-red/10 border border-red/30 text-red hover:bg-red hover:text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                    >
+                      {isClearing ? 'RESETTING...' : 'RESET/LAUNCH NEW'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Registration Status</p>
+                    <p className={`text-sm font-black italic ${tournamentInfo?.registrationActive ? 'text-emerald-500' : 'text-red'}`}>
+                      {tournamentInfo?.registrationActive ? 'SYSTEMS ACTIVE' : 'LOCKED'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Current Champion</p>
+                    <p className="text-sm font-black text-white italic">{tournamentInfo?.winnerTeam || 'N/A'}</p>
+                  </div>
+                  <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Victory Timeline</p>
+                    <p className="text-sm font-black text-white italic">{tournamentInfo?.victoryDate || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Tournament Details */}
             <div className="lg:col-span-2 space-y-8">
               <div className="glass p-8 lg:p-12 rounded-3xl border-white/5 relative overflow-hidden group">
@@ -281,11 +386,19 @@ export default function Tournament({ user }: TournamentProps) {
                           toast.error("You must be logged in to register!");
                           return;
                         }
+                        if (!tournamentInfo?.registrationActive) {
+                          toast.error("REGISTRATION LOCKED: The sector command has currently suspended new entries.");
+                          return;
+                        }
                         setShowRegForm(true);
                       }}
-                      className="btn-neon px-12 py-4 flex-1 text-center"
+                      className={`px-12 py-4 flex-1 text-center transition-all ${
+                        tournamentInfo?.registrationActive 
+                          ? 'btn-neon' 
+                          : 'bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed uppercase font-black tracking-widest text-xs rounded-xl'
+                      }`}
                     >
-                      Initiate Registration
+                      {tournamentInfo?.registrationActive ? 'Initiate Registration' : 'Registration Closed'}
                     </button>
                   )}
                 </div>
@@ -299,15 +412,6 @@ export default function Tournament({ user }: TournamentProps) {
                     <span>Registered Operatives ({registrations.length}/12)</span>
                   </h3>
                   <div className="flex items-center space-x-4">
-                    {isAdmin && registrations.length > 0 && (
-                      <button 
-                        onClick={clearRegistrations}
-                        disabled={isClearing}
-                        className="text-[10px] font-black text-red hover:text-white uppercase tracking-widest px-3 py-1 border border-red/30 rounded hover:bg-red transition-all flex items-center space-x-1"
-                      >
-                        {isClearing ? 'Clearing...' : 'Clear All'}
-                      </button>
-                    )}
                     <div className="h-2 w-32 bg-white/5 rounded-full overflow-hidden">
                       <div className="bg-cyan h-full" style={{ width: `${(registrations.length / 12) * 100}%` }}></div>
                     </div>
@@ -316,12 +420,39 @@ export default function Tournament({ user }: TournamentProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {registrations.map((reg, i) => (
-                    <div key={reg.id} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs font-black text-gray-500">#{i + 1}</span>
-                        <p className="font-bold text-sm text-white">{reg.teamName}</p>
+                    <div key={reg.id} className="flex flex-col p-6 bg-white/5 rounded-2xl border border-white/5 group hover:border-cyan/30 transition-all relative overflow-hidden">
+                      {isAdmin && (
+                        <div className="absolute top-4 right-4 flex space-x-2">
+                           <button onClick={() => updateRegistrationStatus(reg.id, 'approved')} className="p-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-3 h-3" /></button>
+                           <button onClick={() => {
+                             const reason = prompt("Denial Reason:");
+                             if (reason) updateRegistrationStatus(reg.id, 'denied', reason);
+                           }} className="p-1.5 bg-red/10 text-red rounded-lg border border-red/20 hover:bg-red hover:text-white transition-all"><X className="w-3 h-3" /></button>
+                           <button onClick={() => deleteRegistration(reg.id)} className="p-1.5 bg-white/5 text-gray-500 rounded-lg border border-white/10 hover:bg-red hover:text-white transition-all"><X className="w-3 h-3 rotate-45" /></button>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center space-x-3 mb-4">
+                        <span className="text-[10px] font-black text-gray-600 bg-white/5 w-6 h-6 flex items-center justify-center rounded">#{i + 1}</span>
+                        <div className="flex flex-col">
+                          <p className="font-black text-base text-white italic truncate">{reg.teamName}</p>
+                          <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${
+                            reg.status === 'approved' ? 'text-emerald-500' :
+                            reg.status === 'denied' ? 'text-red' : 'text-yellow-500'
+                          }`}>{reg.status}</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-cyan font-black uppercase tracking-widest">{reg.player1}</span>
+                      
+                      <div className="grid grid-cols-2 gap-y-2 pt-4 border-t border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Lead</span>
+                          <span className="text-[10px] text-cyan font-bold truncate">{reg.player1}</span>
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Contact</span>
+                          <span className="text-[10px] text-gray-400 font-bold">{reg.phone}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                   {registrations.length === 0 && (
