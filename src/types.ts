@@ -35,8 +35,21 @@ export interface PointTransaction {
   createdAt: string;
 }
 
+export interface Tournament {
+  id: string;
+  title: string;
+  winnerTeam?: string;
+  victoryDate?: string;
+  scrollingText?: string;
+  registrationActive: boolean;
+  status: 'upcoming' | 'active' | 'completed';
+  createdAt: any;
+  updatedAt: any;
+}
+
 export interface TournamentRegistration {
   id?: string;
+  tournamentId: string;
   userId: string;
   teamName: string;
   player1: string;

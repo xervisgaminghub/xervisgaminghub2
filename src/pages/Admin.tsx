@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { UserProfile, Order, TournamentRegistration } from '../types';
+import { UserProfile, Order, TournamentRegistration, Tournament } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { getRank } from '../lib/rankUtils';
@@ -100,6 +100,17 @@ export default function Admin({ user }: AdminProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [tournamentForm, setTournamentForm] = useState({
+    title: '',
+    status: 'upcoming' as 'upcoming' | 'active' | 'completed',
+    registrationActive: false,
+    winnerTeam: '',
+    victoryDate: '',
+    scrollingText: ''
+  });
+  const [isCreatingTournament, setIsCreatingTournament] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -123,11 +134,6 @@ export default function Admin({ user }: AdminProps) {
     category: 'Diamond'
   });
 
-  // Tournament Info State
-  const [winnerTeam, setWinnerTeam] = useState('');
-  const [victoryDate, setVictoryDate] = useState('');
-  const [scrollingText, setScrollingText] = useState('');
-
   // Password Lock State
   const [passcode, setPasscode] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -136,7 +142,7 @@ export default function Admin({ user }: AdminProps) {
   useEffect(() => {
     if (isAdmin && isUnlocked) {
       if (activeTab === 'tournament') {
-        fetchTournamentInfo();
+        fetchTournaments();
       } else if (activeTab === 'analytics') {
         fetchAnalytics();
       } else if (activeTab === 'products') {
@@ -416,59 +422,89 @@ export default function Admin({ user }: AdminProps) {
     }
   };
 
-  const fetchTournamentInfo = async () => {
+  const fetchTournaments = async () => {
     setLoading(true);
     try {
-      // Fetch info
-      const infoDoc = await getDoc(doc(db, 'tournament_info', 'current'));
-      if (infoDoc.exists()) {
-        const data = infoDoc.data();
-        setWinnerTeam(data.winnerTeam || '');
-        setVictoryDate(data.victoryDate || '');
-        setScrollingText(data.scrollingText || '');
-      }
-
-      // Fetch registrations
-      const q = query(collection(db, 'tournamentRegistrations'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
-      setRegistrations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TournamentRegistration)));
+      const fetchedTournaments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tournament));
+      setTournaments(fetchedTournaments);
+      
+      if (fetchedTournaments.length > 0 && !selectedTournament) {
+        setSelectedTournament(fetchedTournaments[0]);
+      }
     } catch (error) {
-      console.error("Error fetching tournament data:", error);
+      console.error("Error fetching tournaments:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateWinnerInfo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating('winner');
+  useEffect(() => {
+    if (selectedTournament) {
+      fetchRegistrations(selectedTournament.id);
+    }
+  }, [selectedTournament]);
+
+  const fetchRegistrations = async (tournamentId: string) => {
     try {
-      await setDoc(doc(db, 'tournament_info', 'current'), {
-        winnerTeam,
-        victoryDate,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      toast.success("Tournament winner updated successfully!");
+      const q = query(
+        collection(db, 'tournamentRegistrations'), 
+        where('tournamentId', '==', tournamentId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      setRegistrations(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TournamentRegistration)));
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'tournament_info/current');
+      console.error("Error fetching registrations:", error);
+    }
+  };
+
+  const saveTournament = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating('tournament-save');
+    try {
+      const data = {
+        ...tournamentForm,
+        updatedAt: serverTimestamp()
+      };
+
+      if (selectedTournament && !isCreatingTournament) {
+        await updateDoc(doc(db, 'tournaments', selectedTournament.id), data);
+        toast.success("Tournament updated!");
+      } else {
+        await addDoc(collection(db, 'tournaments'), {
+          ...data,
+          createdAt: serverTimestamp()
+        });
+        toast.success("New tournament deployed!");
+        setIsCreatingTournament(false);
+      }
+      fetchTournaments();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'tournaments');
     } finally {
       setIsUpdating(null);
     }
   };
 
-  const updateAlertText = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating('alert');
+  const deleteTournament = async (id: string) => {
+    if (!window.confirm("Permanently delete this tournament and all its registrations?")) return;
     try {
-      await setDoc(doc(db, 'tournament_info', 'current'), {
-        scrollingText,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      toast.success("Alert scroll text updated successfully!");
+      await deleteDoc(doc(db, 'tournaments', id));
+      
+      // Also delete associated registrations (in a real app, use a cloud function or batch)
+      const q = query(collection(db, 'tournamentRegistrations'), where('tournamentId', '==', id));
+      const snapshot = await getDocs(q);
+      for (const d of snapshot.docs) {
+        await deleteDoc(doc(db, 'tournamentRegistrations', d.id));
+      }
+      
+      toast.success("Tournament and registrations purged.");
+      if (selectedTournament?.id === id) setSelectedTournament(null);
+      fetchTournaments();
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'tournament_info/current');
-    } finally {
-      setIsUpdating(null);
+      handleFirestoreError(error, OperationType.DELETE, `tournaments/${id}`);
     }
   };
 
@@ -487,7 +523,7 @@ export default function Admin({ user }: AdminProps) {
         denyReason: status === 'denied' ? denyReason : ''
       });
       toast.success(`Registration ${status}`);
-      fetchTournamentInfo();
+      if (selectedTournament) fetchRegistrations(selectedTournament.id);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `tournamentRegistrations/${regId}`);
     } finally {
@@ -500,7 +536,7 @@ export default function Admin({ user }: AdminProps) {
     try {
       await deleteDoc(doc(db, 'tournamentRegistrations', regId));
       toast.success("Registration deleted");
-      fetchTournamentInfo();
+      if (selectedTournament) fetchRegistrations(selectedTournament.id);
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `tournamentRegistrations/${regId}`);
     }
@@ -1359,213 +1395,251 @@ export default function Admin({ user }: AdminProps) {
            </div>
          ) : (
           <div className="p-8 lg:p-12">
-            <div className="max-w-2xl space-y-12">
-              {/* Section 1: Tournament Winner Info */}
-              <div className="space-y-8">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
-                    <Trophy className="w-6 h-6 text-cyan" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black uppercase italic">Winner <span className="text-cyan">Information</span></h3>
-                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Update previous week winner credentials</p>
-                  </div>
-                </div>
-
-                <form onSubmit={updateWinnerInfo} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Winner Team Name</label>
-                      <input 
-                        type="text" 
-                        value={winnerTeam}
-                        onChange={e => setWinnerTeam(e.target.value)}
-                        placeholder="e.g. Diabolic Death Squad"
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Victory Date</label>
-                      <input 
-                        type="text" 
-                        value={victoryDate}
-                        onChange={e => setVictoryDate(e.target.value)}
-                        placeholder="e.g. 24/04"
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
-                        required
-                      />
-                    </div>
-                  </div>
-
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {/* Sidebar: Tournament List */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-500">Archive</h3>
                   <button 
-                    type="submit" 
-                    disabled={isUpdating === 'winner'}
-                    className="btn-cyan px-10 py-3 flex items-center justify-center space-x-2"
+                    onClick={() => {
+                      setIsCreatingTournament(true);
+                      setSelectedTournament(null);
+                      setTournamentForm({
+                        title: 'New Tournament',
+                        status: 'upcoming',
+                        registrationActive: false,
+                        winnerTeam: '',
+                        victoryDate: '',
+                        scrollingText: ''
+                      });
+                    }}
+                    className="p-2 bg-cyan/10 text-cyan rounded-lg hover:bg-cyan hover:text-dark transition-all"
                   >
-                    {isUpdating === 'winner' ? (
-                      <span className="h-4 w-4 border-2 border-dark/20 border-t-dark rounded-full animate-spin"></span>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4" />
-                        <span className="font-black uppercase tracking-widest text-[10px]">Update Winner</span>
-                      </>
-                    )}
+                    <Star className="w-4 h-4" />
                   </button>
-                </form>
-              </div>
-
-              {/* Section 2: Alert Scroll Text */}
-              <div className="space-y-8">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
-                    <Flag className="w-6 h-6 text-cyan" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black uppercase italic">Alert <span className="text-cyan">Scroll Text</span></h3>
-                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Update global scrolling broadcast message</p>
-                  </div>
                 </div>
-
-                <form onSubmit={updateAlertText} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Scroll Content</label>
-                    <textarea 
-                      value={scrollingText}
-                      onChange={e => setScrollingText(e.target.value)}
-                      placeholder="Enter broadcast message..."
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[120px] resize-none"
-                      required
-                    />
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    disabled={isUpdating === 'alert'}
-                    className="btn-cyan px-10 py-3 flex items-center justify-center space-x-2"
-                  >
-                    {isUpdating === 'alert' ? (
-                      <span className="h-4 w-4 border-2 border-dark/20 border-t-dark rounded-full animate-spin"></span>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4" />
-                        <span className="font-black uppercase tracking-widest text-[10px]">Update Scroll Text</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-
-              {/* Live Preview Section */}
-              <div className="mt-12 p-8 bg-cyan/5 border border-cyan/10 rounded-[2rem] border-dashed">
-                <h4 className="text-[10px] font-black text-cyan uppercase tracking-widest mb-4 flex items-center">
-                  <Shield className="w-3 h-3 mr-2" />
-                  Live Intel Preview:
-                </h4>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                     <div className="p-3 bg-white/5 rounded-full">
-                       <Trophy className="w-6 h-6 text-yellow-500" />
-                     </div>
-                     <div>
-                       <p className="text-lg font-black uppercase text-white">{winnerTeam || '---'}</p>
-                       <p className="text-[10px] text-gray-500 font-bold uppercase">Victory: {victoryDate || '---'}</p>
-                     </div>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                    <p className="text-[10px] text-cyan font-bold uppercase leading-relaxed opacity-70 italic line-clamp-2">
-                       {scrollingText || 'No alert text set...'}
-                    </p>
-                  </div>
+                <div className="space-y-3">
+                  {tournaments.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setSelectedTournament(t);
+                        setIsCreatingTournament(false);
+                        setTournamentForm({
+                          title: t.title,
+                          status: t.status,
+                          registrationActive: t.registrationActive,
+                          winnerTeam: t.winnerTeam || '',
+                          victoryDate: t.victoryDate || '',
+                          scrollingText: t.scrollingText || ''
+                        });
+                      }}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                        selectedTournament?.id === t.id 
+                          ? 'bg-cyan/10 border-cyan/30 text-white' 
+                          : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t.status}</span>
+                        <Trophy className={`w-3 h-3 ${t.status === 'completed' ? 'text-yellow-500' : 'opacity-0'}`} />
+                      </div>
+                      <p className="font-bold text-sm truncate">{t.title}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Section 4: Tournament Registrations */}
-              <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
-                      <Users className="w-6 h-6 text-cyan" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black uppercase italic">Tournament <span className="text-cyan">Registrations</span></h3>
-                      <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Approve or Deny awaiting operatives</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-white">{registrations.length}</p>
-                    <p className="text-[8px] text-gray-500 uppercase font-bold tracking-widest">Total Squads</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {registrations.map((reg) => (
-                    <div key={reg.id} className="glass p-6 rounded-[2rem] border-white/5 hover:border-white/10 transition-all group">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <h4 className="text-lg font-black text-white uppercase italic">{reg.teamName}</h4>
-                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
-                              reg.status === 'approved' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
-                              reg.status === 'denied' ? 'bg-red/20 text-red border-red/30' :
-                              'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-black animate-pulse'
-                            }`}>
-                              {reg.status}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">L1:</span> {reg.player1}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">P2:</span> {reg.player2}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">P3:</span> {reg.player3}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase"><span className="text-gray-600">P4:</span> {reg.player4}</p>
-                          </div>
-                          {reg.status === 'denied' && reg.denyReason && (
-                            <p className="text-[10px] text-red font-bold uppercase p-2 bg-red/10 rounded-lg border border-red/20">
-                              <span className="text-red/60 mr-2 italic">Deny Reason:</span> {reg.denyReason}
-                            </p>
-                          )}
-                          <p className="text-[10px] text-cyan font-black uppercase tracking-widest flex items-center">
-                            <span className="text-gray-600 mr-2">Contact:</span> {reg.phone}
+              {/* Main Content: Tournament Details & Registrations */}
+              <div className="lg:col-span-3 space-y-12">
+                {(isCreatingTournament || selectedTournament) ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
+                          <Trophy className="w-6 h-6 text-cyan" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black uppercase italic">
+                            {isCreatingTournament ? 'Deploy New Tournament' : 'Tournament Management'}
+                          </h3>
+                          <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">
+                            {isCreatingTournament ? 'Initialize zero-point containment sector' : `Managing: ${selectedTournament?.title}`}
                           </p>
                         </div>
+                      </div>
+                      {!isCreatingTournament && selectedTournament && (
+                        <button 
+                          onClick={() => deleteTournament(selectedTournament.id)}
+                          className="p-3 bg-red/10 text-red hover:bg-red hover:text-white rounded-xl border border-red/20 transition-all"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
 
-                        <div className="flex items-center space-x-2">
-                          {reg.status === 'pending' && (
-                            <>
-                              <button 
-                                onClick={() => updateRegistrationStatus(reg.id!, 'approved')}
-                                className="p-3 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-dark rounded-xl transition-all border border-green-500/20"
-                                title="Approve Squad"
-                              >
-                                <UserCheck className="w-5 h-5" />
-                              </button>
-                              <button 
-                                onClick={() => updateRegistrationStatus(reg.id!, 'denied')}
-                                className="p-3 bg-red/10 hover:bg-red text-red hover:text-dark rounded-xl transition-all border border-red/20"
-                                title="Deny Squad"
-                              >
-                                <UserX className="w-5 h-5" />
-                              </button>
-                            </>
-                          )}
-                          <button 
-                            onClick={() => deleteRegistration(reg.id!)}
-                            className="p-3 bg-white/5 hover:bg-red text-gray-400 hover:text-white rounded-xl transition-all border border-white/10"
-                            title="Delete Registration"
+                    <form onSubmit={saveTournament} className="space-y-8 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Intel Title</label>
+                          <input 
+                            type="text" 
+                            required
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                            value={tournamentForm.title}
+                            onChange={e => setTournamentForm({...tournamentForm, title: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Operation Status</label>
+                          <select 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-black uppercase"
+                            value={tournamentForm.status}
+                            onChange={e => setTournamentForm({...tournamentForm, status: e.target.value as any})}
                           >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Registration Portal</label>
+                          <select 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-black uppercase"
+                            value={tournamentForm.registrationActive ? 'true' : 'false'}
+                            onChange={e => setTournamentForm({...tournamentForm, registrationActive: e.target.value === 'true'})}
+                          >
+                            <option value="true">OPEN / ACTIVE</option>
+                            <option value="false">LOCKED / CLOSED</option>
+                          </select>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {registrations.length === 0 && (
-                    <div className="py-12 text-center glass rounded-[2rem] border-dashed border-white/5">
-                       <Users className="w-12 h-12 text-gray-700 mx-auto mb-4 opacity-20" />
-                       <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">No squad deployments found in sector.</p>
-                    </div>
-                  )}
-                </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Champion Squad (If Completed)</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Shadow Ops Elite"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                            value={tournamentForm.winnerTeam}
+                            onChange={e => setTournamentForm({...tournamentForm, winnerTeam: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Victory Timestamp</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 24 MAY 2026"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                            value={tournamentForm.victoryDate}
+                            onChange={e => setTournamentForm({...tournamentForm, victoryDate: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Encrypted Scroll Intel (Global Prompt)</label>
+                        <textarea 
+                          placeholder="Broadcast message for this specific tournament..."
+                          className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[100px] resize-none"
+                          value={tournamentForm.scrollingText}
+                          onChange={e => setTournamentForm({...tournamentForm, scrollingText: e.target.value})}
+                        />
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        disabled={isUpdating === 'tournament-save'}
+                        className="btn-cyan w-full py-4 flex items-center justify-center space-x-3 group"
+                      >
+                        <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span className="font-black uppercase tracking-widest">
+                          {isCreatingTournament ? 'Execute Deployment' : 'Update Intel Records'}
+                        </span>
+                      </button>
+                    </form>
+
+                    {/* Selected Tournament Registrations */}
+                    {!isCreatingTournament && selectedTournament && (
+                      <div className="space-y-8 mt-12">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xl font-black uppercase italic">Deployment <span className="text-cyan">Roster</span></h3>
+                          <span className="text-xs font-black text-gray-500 uppercase tracking-widest">
+                            {registrations.length} Squads Active
+                          </span>
+                        </div>
+
+                        <div className="space-y-4">
+                          {registrations.map((reg) => (
+                            <div key={reg.id} className="glass p-6 rounded-3xl border-white/5 hover:border-white/10 transition-all">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="space-y-3">
+                                  <div className="flex items-center space-x-3">
+                                    <h4 className="text-lg font-black text-white italic truncate">{reg.teamName}</h4>
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                      reg.status === 'approved' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                                      reg.status === 'denied' ? 'bg-red/10 text-red border-red/20' :
+                                      'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                                    }`}>
+                                      {reg.status}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                                      Leader: <span className="text-white ml-2">{reg.player1}</span>
+                                    </p>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                                      Contact: <span className="text-cyan ml-2">{reg.phone}</span>
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  {reg.status === 'pending' && (
+                                    <>
+                                      <button 
+                                        onClick={() => updateRegistrationStatus(reg.id!, 'approved')}
+                                        className="p-3 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-dark rounded-xl transition-all"
+                                      >
+                                        <UserCheck className="w-5 h-5" />
+                                      </button>
+                                      <button 
+                                        onClick={() => updateRegistrationStatus(reg.id!, 'denied')}
+                                        className="p-3 bg-red/10 hover:bg-red text-red hover:text-dark rounded-xl transition-all"
+                                      >
+                                        <UserX className="w-5 h-5" />
+                                      </button>
+                                    </>
+                                  )}
+                                  <button 
+                                    onClick={() => deleteRegistration(reg.id!)}
+                                    className="p-3 bg-white/5 hover:bg-red text-gray-500 hover:text-white rounded-xl transition-all"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {registrations.length === 0 && (
+                            <div className="py-12 text-center glass rounded-3xl border-dashed border-white/5">
+                              <Users className="w-12 h-12 text-gray-800 mx-auto mb-4 opacity-50" />
+                              <p className="text-gray-500 text-xs font-black uppercase tracking-widest">No operatives registered for this sector.</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-24 text-center glass rounded-[3rem] border-dashed border-white/5 min-h-[500px]">
+                    <Trophy className="w-16 h-16 text-gray-800 mb-6 opacity-30" />
+                    <h3 className="text-2xl font-black text-gray-500 uppercase tracking-tighter mb-2 italic">Sector Intelligence Offline</h3>
+                    <p className="text-gray-600 text-xs uppercase tracking-widest font-black max-w-xs">
+                      Select a tournament from the decrypted archive to manage or deploy a new intelligence sector.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

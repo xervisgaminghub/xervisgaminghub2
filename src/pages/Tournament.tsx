@@ -1,32 +1,11 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield } from 'lucide-react';
+import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield, Star, Megaphone } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, Tournament as TournamentType, TournamentRegistration } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, deleteDoc, doc, writeBatch, onSnapshot, where, updateDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-
-interface Registration {
-  id: string;
-  userId: string;
-  teamName: string;
-  player1: string;
-  player2: string;
-  player3: string;
-  player4: string;
-  phone: string;
-  status: 'pending' | 'approved' | 'denied';
-  denyReason?: string;
-  createdAt: any;
-}
-
-interface TournamentInfo {
-  winnerTeam: string;
-  victoryDate: string;
-  scrollingText: string;
-  registrationActive: boolean;
-}
 
 interface TournamentProps {
   user: UserProfile | null;
@@ -37,152 +16,77 @@ export default function Tournament({ user }: TournamentProps) {
   const [activeTab, setActiveTab] = useState<'official' | 'community'>('official');
   const [showRegForm, setShowRegForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [tournamentInfo, setTournamentInfo] = useState<TournamentInfo | null>(null);
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
+  const [currentTournament, setCurrentTournament] = useState<TournamentType | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
-  const [userRegistration, setUserRegistration] = useState<Registration | null>(null);
+  const [userRegistration, setUserRegistration] = useState<TournamentRegistration | null>(null);
 
   useEffect(() => {
-    fetchRegistrations();
+    const fetchActiveTournament = async () => {
+      try {
+        const q = query(
+          collection(db, 'tournaments'), 
+          where('status', 'in', ['active', 'upcoming']),
+          orderBy('createdAt', 'desc'),
+          limit(1)
+        );
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const t = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as TournamentType;
+          setCurrentTournament(t);
+        }
+      } catch (error) {
+        console.error("Error fetching active tournament:", error);
+      }
+    };
+
+    fetchActiveTournament();
+  }, []);
+
+  useEffect(() => {
+    if (!currentTournament) {
+      setRegistrations([]);
+      setUserRegistration(null);
+      return;
+    }
+
+    // Subscribe to registrations for this tournament
+    const qRegs = query(
+      collection(db, 'tournamentRegistrations'), 
+      where('tournamentId', '==', currentTournament.id),
+      orderBy('createdAt', 'asc')
+    );
     
-    // Subscribe to tournament info
-    const unsub = onSnapshot(doc(db, 'tournament_info', 'current'), (doc) => {
-      if (doc.exists()) {
-        setTournamentInfo(doc.data() as TournamentInfo);
+    const unsubRegs = onSnapshot(qRegs, (snapshot) => {
+      const allRegs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TournamentRegistration));
+      setRegistrations(allRegs.filter(r => r.status === 'approved' || isAdmin));
+      
+      if (user) {
+        const myReg = allRegs.find(r => r.userId === user.uid);
+        setUserRegistration(myReg || null);
       }
     });
 
-    // Subscribe to user's registration if logged in
-    let userUnsub = () => {};
-    if (user) {
-      const q = query(collection(db, 'tournamentRegistrations'), where('userId', '==', user.uid), limit(1));
-      userUnsub = onSnapshot(q, (snapshot) => {
-        if (!snapshot.empty) {
-          setUserRegistration({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Registration);
-        } else {
-          setUserRegistration(null);
-        }
-      });
-    }
-
-    return () => {
-      unsub();
-      userUnsub();
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (activeTab === 'official') {
-      toast("No official tournament registration yet.", {
-        description: "Status: Standby mode active.",
-        duration: 3000
-      });
-    }
-  }, [activeTab]);
-
-  const fetchRegistrations = async () => {
-    setLoading(true);
-    try {
-      const baseQuery = collection(db, 'tournamentRegistrations');
-      let q;
-      if (isAdmin) {
-        q = query(baseQuery, orderBy('createdAt', 'asc'), limit(12));
-      } else {
-        q = query(baseQuery, where('status', '==', 'approved'), orderBy('createdAt', 'asc'), limit(12));
-      }
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) } as Registration));
-      setRegistrations(data);
-    } catch (error) {
-      console.error("Error fetching registrations:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateTournamentInfo = async (updates: Partial<TournamentInfo>) => {
-    if (!isAdmin) return;
-    try {
-      await updateDoc(doc(db, 'tournament_info', 'current'), {
-        ...updates,
-        updatedAt: serverTimestamp()
-      });
-      toast.success("Tournament protocol updated.");
-    } catch (error) {
-      console.error("Error updating tournament info:", error);
-      toast.error("Failed to update tournament protocol.");
-    }
-  };
-
-  const deleteRegistration = async (id: string) => {
-    if (!isAdmin) return;
-    if (!window.confirm("Terminate this registration data?")) return;
-
-    try {
-      await deleteDoc(doc(db, 'tournamentRegistrations', id));
-      toast.success("Registration data purged.");
-      fetchRegistrations();
-    } catch (error) {
-      console.error("Error deleting registration:", error);
-      toast.error("Process termination failed.");
-    }
-  };
-
-  const updateRegistrationStatus = async (id: string, status: 'approved' | 'denied', denyReason?: string) => {
-    if (!isAdmin) return;
-    try {
-      await updateDoc(doc(db, 'tournamentRegistrations', id), {
-        status,
-        ...(denyReason && { denyReason }),
-        updatedAt: serverTimestamp()
-      });
-      toast.success(`Registration status set to ${status}.`);
-      fetchRegistrations();
-    } catch (error) {
-      console.error("Error updating registration status:", error);
-      toast.error("Status update protocol error.");
-    }
-  };
-
-  const clearRegistrations = async () => {
-    if (!isAdmin) return;
-    if (!window.confirm("Are you sure you want to CLEAR ALL registrations? This cannot be undone.")) return;
-
-    setIsClearing(true);
-    try {
-      const batch = writeBatch(db);
-      registrations.forEach((reg) => {
-        batch.delete(doc(db, 'tournamentRegistrations', reg.id));
-      });
-      await batch.commit();
-      setRegistrations([]);
-      toast.success("All registrations have been cleared.");
-      fetchRegistrations();
-    } catch (error) {
-      console.error("Error clearing registrations:", error);
-      toast.error("Failed to clear registrations.");
-    } finally {
-      setIsClearing(false);
-    }
-  };
+    return () => unsubRegs();
+  }, [currentTournament, user, isAdmin]);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) {
-      toast.error("Please login to register!");
+    if (!user || !currentTournament) {
+      toast.error("Please login/Wait for system initialization!");
       return;
     }
 
     if (registrations.length >= 12) {
-      toast.error("Tournament is full! Max 12 teams allowed.");
+      toast.error("Tournament sector is full! Entry denied.");
       return;
     }
 
     const formData = new FormData(e.currentTarget);
     const data = {
       userId: user.uid,
+      tournamentId: currentTournament.id,
       teamName: formData.get('teamName') as string,
       player1: formData.get('player1') as string,
       player2: formData.get('player2') as string,
@@ -198,12 +102,36 @@ export default function Tournament({ user }: TournamentProps) {
       await addDoc(collection(db, 'tournamentRegistrations'), data);
       setShowRegForm(false);
       setShowSuccessModal(true);
-      fetchRegistrations();
     } catch (error) {
-      console.error("Registration error:", error);
-      toast.error("Registration failed. Please try again.");
+      console.error("Registration failed:", error);
+      toast.error("Registration signal lost. Try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const updateRegistrationStatus = async (id: string, status: 'approved' | 'denied', denyReason?: string) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, 'tournamentRegistrations', id), {
+        status,
+        ...(denyReason && { denyReason }),
+        updatedAt: serverTimestamp()
+      });
+      toast.success(`Protocol updated: ${status}`);
+    } catch (error) {
+      toast.error("Status update protocol error.");
+    }
+  };
+
+  const deleteRegistration = async (id: string) => {
+    if (!isAdmin) return;
+    if (!window.confirm("Terminate this registration data?")) return;
+    try {
+      await deleteDoc(doc(db, 'tournamentRegistrations', id));
+      toast.success("Registration data purged.");
+    } catch (error) {
+      toast.error("Process termination failed.");
     }
   };
 
@@ -212,6 +140,28 @@ export default function Tournament({ user }: TournamentProps) {
       <div className="text-center mb-16">
         <h1 className="text-5xl font-black mb-4 tracking-tighter">ESPORTS <span className="neon-text uppercase">Arena</span></h1>
         <p className="text-gray-400 max-w-xl mx-auto uppercase text-[10px] font-bold tracking-[0.2em]">Select your sector and initiate combat registration.</p>
+        
+        {currentTournament?.scrollingText && (
+          <div className="mt-8 overflow-hidden bg-cyan/5 border-y border-cyan/10 py-3 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0A0A0B] to-transparent z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0A0A0B] to-transparent z-10" />
+            <motion.div 
+              animate={{ x: [0, -1000] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="whitespace-nowrap flex items-center space-x-8"
+            >
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Star className="w-3 h-3 text-cyan fill-cyan" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-cyan italic">
+                    {currentTournament.scrollingText}
+                  </span>
+                  <Megaphone className="w-3 h-3 text-cyan" />
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        )}
       </div>
 
       {/* Tab Navigation */}
@@ -266,65 +216,6 @@ export default function Tournament({ user }: TournamentProps) {
             exit={{ opacity: 0, y: -20 }}
             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           >
-            {/* Admin Controls Panel */}
-            {isAdmin && (
-              <div className="col-span-full glass p-8 rounded-3xl border-cyan/30 bg-cyan/5 mb-8">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center space-x-3">
-                    <Shield className="w-6 h-6 text-cyan" />
-                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Command Control Panel</h3>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <button 
-                      onClick={() => updateTournamentInfo({ registrationActive: !tournamentInfo?.registrationActive })}
-                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        tournamentInfo?.registrationActive 
-                          ? 'bg-red text-white shadow-[0_0_20px_#FF3B3F]/30' 
-                          : 'bg-emerald-500 text-white shadow-[0_0_20px_#10b981]/30'
-                      }`}
-                    >
-                      {tournamentInfo?.registrationActive ? 'DEACTIVATE REG' : 'ACTIVATE REG'}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        const team = prompt("Winner Team Name:", tournamentInfo?.winnerTeam);
-                        const date = prompt("Victory Date:", tournamentInfo?.victoryDate);
-                        const text = prompt("Scrolling Text:", tournamentInfo?.scrollingText);
-                        if (team && date) updateTournamentInfo({ winnerTeam: team, victoryDate: date, scrollingText: text || '' });
-                      }}
-                      className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                    >
-                      Edit Intel
-                    </button>
-                    <button 
-                      onClick={clearRegistrations}
-                      disabled={isClearing}
-                      className="bg-red/10 border border-red/30 text-red hover:bg-red hover:text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                    >
-                      {isClearing ? 'RESETTING...' : 'RESET/LAUNCH NEW'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
-                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Registration Status</p>
-                    <p className={`text-sm font-black italic ${tournamentInfo?.registrationActive ? 'text-emerald-500' : 'text-red'}`}>
-                      {tournamentInfo?.registrationActive ? 'SYSTEMS ACTIVE' : 'LOCKED'}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
-                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Current Champion</p>
-                    <p className="text-sm font-black text-white italic">{tournamentInfo?.winnerTeam || 'N/A'}</p>
-                  </div>
-                  <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
-                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Victory Timeline</p>
-                    <p className="text-sm font-black text-white italic">{tournamentInfo?.victoryDate || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Tournament Details */}
             <div className="lg:col-span-2 space-y-8">
               <div className="glass p-8 lg:p-12 rounded-3xl border-white/5 relative overflow-hidden group">
@@ -332,7 +223,9 @@ export default function Tournament({ user }: TournamentProps) {
                   <Trophy className="w-32 h-32 text-cyan" />
                 </div>
                 
-                <h2 className="text-4xl font-black text-white mb-6 tracking-tighter">FREEFIRE <span className="text-cyan">BATTLE LEAGUE</span></h2>
+                <h2 className="text-4xl font-black text-white mb-6 tracking-tighter uppercase tabular-nums">
+                  {currentTournament?.title || 'FREEFIRE BATTLE LEAGUE'}
+                </h2>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                   <DetailItem label="Schedule" value="Every Thursday" />
@@ -356,7 +249,7 @@ export default function Tournament({ user }: TournamentProps) {
                          <span className={`px-3 py-1 rounded text-[10px] font-black uppercase border ${
                            userRegistration.status === 'approved' ? 'bg-green-500/20 text-green-500 border-green-500/30' :
                            userRegistration.status === 'denied' ? 'bg-red/20 text-red border-red/30' :
-                           'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 animate-pulse'
+                           'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
                          }`}>
                            {userRegistration.status}
                          </span>
@@ -386,19 +279,19 @@ export default function Tournament({ user }: TournamentProps) {
                           toast.error("You must be logged in to register!");
                           return;
                         }
-                        if (!tournamentInfo?.registrationActive) {
+                        if (!currentTournament?.registrationActive) {
                           toast.error("REGISTRATION LOCKED: The sector command has currently suspended new entries.");
                           return;
                         }
                         setShowRegForm(true);
                       }}
                       className={`px-12 py-4 flex-1 text-center transition-all ${
-                        tournamentInfo?.registrationActive 
+                        currentTournament?.registrationActive 
                           ? 'btn-neon' 
                           : 'bg-white/5 text-gray-600 border border-white/5 cursor-not-allowed uppercase font-black tracking-widest text-xs rounded-xl'
                       }`}
                     >
-                      {tournamentInfo?.registrationActive ? 'Initiate Registration' : 'Registration Closed'}
+                      {currentTournament?.registrationActive ? 'Initiate Registration' : 'Registration Closed'}
                     </button>
                   )}
                 </div>
@@ -423,12 +316,12 @@ export default function Tournament({ user }: TournamentProps) {
                     <div key={reg.id} className="flex flex-col p-6 bg-white/5 rounded-2xl border border-white/5 group hover:border-cyan/30 transition-all relative overflow-hidden">
                       {isAdmin && (
                         <div className="absolute top-4 right-4 flex space-x-2">
-                           <button onClick={() => updateRegistrationStatus(reg.id, 'approved')} className="p-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-3 h-3" /></button>
+                           <button onClick={() => updateRegistrationStatus(reg.id!, 'approved')} className="p-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle className="w-3 h-3" /></button>
                            <button onClick={() => {
                              const reason = prompt("Denial Reason:");
-                             if (reason) updateRegistrationStatus(reg.id, 'denied', reason);
+                             if (reason) updateRegistrationStatus(reg.id!, 'denied', reason);
                            }} className="p-1.5 bg-red/10 text-red rounded-lg border border-red/20 hover:bg-red hover:text-white transition-all"><X className="w-3 h-3" /></button>
-                           <button onClick={() => deleteRegistration(reg.id)} className="p-1.5 bg-white/5 text-gray-500 rounded-lg border border-white/10 hover:bg-red hover:text-white transition-all"><X className="w-3 h-3 rotate-45" /></button>
+                           <button onClick={() => deleteRegistration(reg.id!)} className="p-1.5 bg-white/5 text-gray-500 rounded-lg border border-white/10 hover:bg-red hover:text-white transition-all"><X className="w-3 h-3 rotate-45" /></button>
                         </div>
                       )}
                       
@@ -472,10 +365,10 @@ export default function Tournament({ user }: TournamentProps) {
                     <div className="absolute inset-0 blur-xl bg-yellow-500/20 rounded-full"></div>
                   </div>
                   <p className="text-2xl font-black text-white tracking-widest uppercase mb-1 underline decoration-yellow-500 text-center">
-                    {tournamentInfo?.winnerTeam || 'Diabolic Death Squad'}
+                    {currentTournament?.winnerTeam || 'Diabolic Death Squad'}
                   </p>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center">
-                    {tournamentInfo?.victoryDate ? `Victory achieved on ${tournamentInfo.victoryDate}` : 'Victory achieved on 24/04'}
+                    {currentTournament?.victoryDate ? `Victory achieved on ${currentTournament.victoryDate}` : 'Victory achieved on 24/04'}
                   </p>
                 </div>
               </div>

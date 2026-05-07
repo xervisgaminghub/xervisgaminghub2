@@ -65,6 +65,7 @@
       "description": "Registration for tournament",
       "type": "object",
       "properties": {
+        "tournamentId": { "type": "string" },
         "userId": { "type": "string" },
         "teamName": { "type": "string" },
         "player1": { "type": "string" },
@@ -76,20 +77,23 @@
         "denyReason": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "teamName", "player1", "player2", "player3", "player4", "phone", "status", "createdAt"]
+      "required": ["tournamentId", "userId", "teamName", "player1", "player2", "player3", "player4", "phone", "status", "createdAt"]
     },
-    "TournamentInfo": {
-      "title": "TournamentInfo",
-      "description": "General tournament information and winner details",
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Information about a competitive gaming event.",
       "type": "object",
       "properties": {
+        "title": { "type": "string" },
         "winnerTeam": { "type": "string" },
         "victoryDate": { "type": "string" },
         "scrollingText": { "type": "string" },
         "registrationActive": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["upcoming", "active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["winnerTeam", "victoryDate", "registrationActive", "updatedAt"]
+      "required": ["title", "status", "registrationActive", "updatedAt"]
     },
     "Announcement": {
       "title": "Announcement",
@@ -126,8 +130,8 @@
       "schema": "TournamentRegistration",
       "description": "Registration for tournament"
     },
-    "/tournament_info/{infoId}": {
-      "schema": "TournamentInfo",
+    "/tournaments/{tournamentId}": {
+      "schema": "Tournament",
       "description": "Tournament metadata and winner info"
     },
     "/announcements/{announcementId}": {
