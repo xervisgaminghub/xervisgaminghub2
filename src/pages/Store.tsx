@@ -4,7 +4,7 @@ import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search, Trophy, Gamepad2, Activity } from 'lucide-react';
+import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search, Trophy, Gamepad2, Activity, Megaphone, Info, AlertTriangle, Star, ChevronRight, ChevronLeft, X, CheckCircle } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -12,6 +12,15 @@ interface Product {
   price: number;
   subFolder: string;
   category: string;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'event';
+  active: boolean;
+  createdAt: any;
 }
 
 interface StoreProps {
@@ -25,6 +34,8 @@ const DEFAULT_SUB_FOLDERS = [
 
 export default function Store({ user }: StoreProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [activeAnnouncementIndex, setActiveAnnouncementIndex] = useState(0);
   const [activeFolder, setActiveFolder] = useState('Free Fire Top up');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,23 +50,38 @@ export default function Store({ user }: StoreProps) {
   const [fetchLoading, setFetchLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const q = query(collection(db, 'products'), orderBy('name', 'asc'));
-        const snapshot = await getDocs(q);
-        const productsList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Product[];
-        setProducts(productsList);
+        // Fetch Products
+        const qProducts = query(collection(db, 'products'), orderBy('name', 'asc'));
+        const productSnapshot = await getDocs(qProducts);
+        setProducts(productSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+
+        // Fetch Announcements
+        const qAnnouncements = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
+        const announcementSnapshot = await getDocs(qAnnouncements);
+        const activeAnnouncements = announcementSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Announcement))
+          .filter(a => a.active);
+        setAnnouncements(activeAnnouncements);
+
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching store data:", error);
       } finally {
         setFetchLoading(false);
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
+
+  // auto-cycle announcements
+  useEffect(() => {
+    if (announcements.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveAnnouncementIndex(prev => (prev + 1) % announcements.length);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [announcements]);
 
   const highlightQuantity = (name: string) => {
     const parts = name.split(/(\d+)/);
@@ -120,6 +146,82 @@ export default function Store({ user }: StoreProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
+      {/* Announcements Slider */}
+      <AnimatePresence mode="wait">
+        {announcements.length > 0 && (
+          <motion.div 
+            key={announcements[activeAnnouncementIndex].id}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="mb-12 relative"
+          >
+            <div className={`p-1 rounded-[2rem] bg-gradient-to-r ${
+              announcements[activeAnnouncementIndex].type === 'warning' ? 'from-red/50 to-orange-500/50' :
+              announcements[activeAnnouncementIndex].type === 'success' ? 'from-emerald-500/50 to-cyan/50' :
+              announcements[activeAnnouncementIndex].type === 'event' ? 'from-yellow-500/50 to-orange-500/50' :
+              'from-cyan/50 to-blue-500/50'
+            }`}>
+              <div className="bg-[#0A0A0B] rounded-[1.9rem] p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden group">
+                {/* Background glow */}
+                <div className={`absolute -right-24 -top-24 w-64 h-64 blur-[100px] opacity-20 pointer-events-none ${
+                    announcements[activeAnnouncementIndex].type === 'warning' ? 'bg-red' :
+                    announcements[activeAnnouncementIndex].type === 'success' ? 'bg-emerald-500' :
+                    announcements[activeAnnouncementIndex].type === 'event' ? 'bg-yellow-500' :
+                    'bg-cyan'
+                }`} />
+                
+                <div className={`p-4 rounded-2xl border ${
+                  announcements[activeAnnouncementIndex].type === 'warning' ? 'bg-red/10 border-red/20 text-red' :
+                  announcements[activeAnnouncementIndex].type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                  announcements[activeAnnouncementIndex].type === 'event' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' :
+                  'bg-cyan/10 border-cyan/20 text-cyan'
+                }`}>
+                  {announcements[activeAnnouncementIndex].type === 'warning' ? <AlertTriangle className="w-8 h-8" /> :
+                   announcements[activeAnnouncementIndex].type === 'success' ? <CheckCircle className="w-8 h-8" /> :
+                   announcements[activeAnnouncementIndex].type === 'event' ? <Star className="w-8 h-8" /> :
+                   <Megaphone className="w-8 h-8" />}
+                </div>
+
+                <div className="flex-grow text-center md:text-left space-y-2">
+                  <div className="flex items-center justify-center md:justify-start space-x-3">
+                    <span className={`text-[10px] font-black uppercase tracking-[0.3em] px-3 py-1 rounded-full border ${
+                        announcements[activeAnnouncementIndex].type === 'warning' ? 'bg-red text-dark border-red' :
+                        announcements[activeAnnouncementIndex].type === 'success' ? 'bg-emerald-500 text-dark border-emerald-500' :
+                        announcements[activeAnnouncementIndex].type === 'event' ? 'bg-yellow-500 text-dark border-yellow-500' :
+                        'bg-cyan text-dark border-cyan'
+                    }`}>
+                      {announcements[activeAnnouncementIndex].type}
+                    </span>
+                    <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest italic">Broadcast :: {announcements[activeAnnouncementIndex].createdAt?.toDate ? announcements[activeAnnouncementIndex].createdAt.toDate().toLocaleDateString() : 'Active'}</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">{announcements[activeAnnouncementIndex].title}</h2>
+                  <p className="text-gray-400 text-sm font-bold leading-relaxed max-w-2xl">{announcements[activeAnnouncementIndex].message}</p>
+                </div>
+
+                {/* Controls */}
+                {announcements.length > 1 && (
+                  <div className="flex items-center space-x-4 md:ml-auto">
+                    <button 
+                      onClick={() => setActiveAnnouncementIndex(prev => (prev - 1 + announcements.length) % announcements.length)}
+                      className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-cyan transition-all text-gray-500 hover:text-cyan"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => setActiveAnnouncementIndex(prev => (prev + 1) % announcements.length)}
+                      className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-cyan transition-all text-gray-500 hover:text-cyan"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="text-center mb-12">
         <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase italic">Xervis <span className="text-cyan">Depot</span></h1>
         <p className="text-gray-400 max-w-xl mx-auto uppercase text-[10px] font-black tracking-[0.3em]">Protocol Sector: Resource Procurement & Distribution</p>

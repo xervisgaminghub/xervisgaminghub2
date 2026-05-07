@@ -88,6 +88,19 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["winnerTeam", "victoryDate", "updatedAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Global internal announcements shown to users in the app",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "success", "event"] },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "active", "createdAt"]
     }
   },
   "firestore": {
@@ -114,6 +127,10 @@
     "/tournament_info/{infoId}": {
       "schema": "TournamentInfo",
       "description": "Tournament metadata and winner info"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Global internal announcements"
     }
   }
 }

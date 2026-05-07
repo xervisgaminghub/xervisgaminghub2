@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getRank } from '../lib/rankUtils';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp, addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight, Megaphone, Send, Info, AlertTriangle, Star } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
@@ -83,17 +83,36 @@ interface Product {
   category: string;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'event';
+  active: boolean;
+  createdAt: any;
+}
+
 export default function Admin({ user }: AdminProps) {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products'>('analytics');
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products' | 'announcements'>('analytics');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  // Announcement State
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'info' | 'warning' | 'success' | 'event',
+    active: true
+  });
 
   // Product Form State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -122,11 +141,61 @@ export default function Admin({ user }: AdminProps) {
         fetchAnalytics();
       } else if (activeTab === 'products') {
         fetchProducts();
+      } else if (activeTab === 'announcements') {
+        fetchAnnouncements();
       } else {
         fetchData();
       }
     }
   }, [activeTab, isUnlocked]);
+
+  const fetchAnnouncements = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      setAnnouncements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)));
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating('announcement-save');
+    try {
+      if (editingAnnouncement) {
+        await updateDoc(doc(db, 'announcements', editingAnnouncement.id), announcementForm);
+        toast.success("Announcement updated!");
+      } else {
+        await addDoc(collection(db, 'announcements'), {
+          ...announcementForm,
+          createdAt: serverTimestamp()
+        });
+        toast.success("Announcement broadcasted internally!");
+      }
+      setEditingAnnouncement(null);
+      setAnnouncementForm({ title: '', message: '', type: 'info', active: true });
+      fetchAnnouncements();
+    } catch (error) {
+      handleFirestoreError(error, editingAnnouncement ? OperationType.UPDATE : OperationType.CREATE, 'announcements');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    if (!window.confirm("Delete this announcement?")) return;
+    try {
+      await deleteDoc(doc(db, 'announcements', id));
+      toast.success("Announcement deleted");
+      fetchAnnouncements();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `announcements/${id}`);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -856,6 +925,12 @@ export default function Admin({ user }: AdminProps) {
           >
             Products
           </button>
+          <button 
+            onClick={() => setActiveTab('announcements')}
+            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'announcements' ? 'bg-cyan text-dark' : 'text-gray-500 hover:text-white'}`}
+          >
+            Announcements
+          </button>
         </div>
       </div>
 
@@ -997,6 +1072,143 @@ export default function Admin({ user }: AdminProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : activeTab === 'announcements' ? (
+          <div className="p-8 lg:p-12 space-y-12">
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
+                <Megaphone className="w-6 h-6 text-cyan" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black uppercase italic">Internal <span className="text-cyan">Announcement System</span></h3>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Broadcast messages to all operative terminals</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <form onSubmit={saveAnnouncement} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Type</label>
+                      <select 
+                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
+                        value={announcementForm.type}
+                        onChange={e => setAnnouncementForm({...announcementForm, type: e.target.value as any})}
+                      >
+                        <option value="info">Information</option>
+                        <option value="warning">Alert / Warning</option>
+                        <option value="success">Achievement / Update</option>
+                        <option value="event">Tournament / Event</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Visibility</label>
+                      <select 
+                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
+                        value={announcementForm.active ? 'true' : 'false'}
+                        onChange={e => setAnnouncementForm({...announcementForm, active: e.target.value === 'true'})}
+                      >
+                        <option value="true">ACTIVE / VISIBLE</option>
+                        <option value="false">HIDDEN / DRAFT</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Announcement Header</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. New Stock Arrived!"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                      value={announcementForm.title}
+                      onChange={e => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Message Content</label>
+                    <textarea 
+                      required
+                      placeholder="Enter details..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[150px] resize-none"
+                      value={announcementForm.message}
+                      onChange={e => setAnnouncementForm({...announcementForm, message: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <button 
+                    type="submit" 
+                    disabled={isUpdating === 'announcement-save'}
+                    className="btn-cyan flex-grow py-4 flex items-center justify-center space-x-3 group"
+                  >
+                    <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    <span className="font-black uppercase tracking-widest">{editingAnnouncement ? 'Update Broadcast' : 'Deploy Broadcast'}</span>
+                  </button>
+                  {editingAnnouncement && (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setEditingAnnouncement(null);
+                        setAnnouncementForm({ title: '', message: '', type: 'info', active: true });
+                      }}
+                      className="bg-white/5 px-6 rounded-xl border border-white/5 text-gray-500 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+                {announcements.map(a => (
+                  <div key={a.id} className={`glass p-6 rounded-3xl border-white/5 relative group transition-all hover:border-cyan/30 ${!a.active ? 'opacity-50 grayscale' : ''}`}>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${
+                          a.type === 'warning' ? 'bg-red/10 text-red' :
+                          a.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
+                          a.type === 'event' ? 'bg-yellow-500/10 text-yellow-500' :
+                          'bg-cyan/10 text-cyan'
+                        }`}>
+                          {a.type === 'warning' ? <AlertTriangle className="w-4 h-4" /> :
+                           a.type === 'success' ? <CheckCircle className="w-4 h-4" /> :
+                           a.type === 'event' ? <Star className="w-4 h-4" /> :
+                           <Info className="w-4 h-4" />}
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-50">{a.type}</span>
+                      </div>
+                      <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => {
+                            setEditingAnnouncement(a);
+                            setAnnouncementForm({ title: a.title, message: a.message, type: a.type, active: a.active });
+                          }}
+                          className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button 
+                          onClick={() => deleteAnnouncement(a.id)}
+                          className="p-2 hover:bg-red/20 rounded-lg text-gray-400 hover:text-red"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <h4 className="text-white font-black uppercase italic mb-2">{a.title}</h4>
+                    <p className="text-[10px] text-gray-500 font-bold leading-relaxed">{a.message}</p>
+                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                      <span className="text-[8px] font-black text-gray-700 uppercase tracking-widest">Released: {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleString() : 'Recent'}</span>
+                      {!a.active && <span className="text-[8px] font-black text-red uppercase tracking-widest italic">Draft / Hidden</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : activeTab === 'users' ? (
