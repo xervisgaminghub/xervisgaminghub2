@@ -17,6 +17,7 @@ import Admin from './pages/Admin';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import WhatsAppButton from './components/layout/WhatsAppButton';
+import AnnouncementBanner from './components/layout/AnnouncementBanner';
 import LoadingScreen from './components/ui/LoadingScreen';
 import RainEffect from './components/ui/RainEffect';
 import AdBlockDetector from './components/ui/AdBlockDetector';
@@ -69,6 +70,7 @@ function AppRoutes() {
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <RainEffect />
       <AdBlockDetector />
+      <AnnouncementBanner />
       <Navbar user={user} />
       <main className="flex-grow">
         <Routes>
