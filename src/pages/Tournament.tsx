@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield, Star, Megaphone } from 'lucide-react';
+import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield, Star, Megaphone, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { UserProfile, Tournament as TournamentType, TournamentRegistration } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -228,18 +229,34 @@ export default function Tournament({ user }: TournamentProps) {
                 </h2>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                  <DetailItem label="Schedule" value="Every Thursday" />
-                  <DetailItem label="Start Time" value="9:00 PM" />
-                  <DetailItem label="Entry Fee" value="FREE (0 BDT)" />
-                  <DetailItem label="Platform" value="Mobile" />
+                  <DetailItem label="Schedule" value={currentTournament?.schedule || 'Every Thursday'} />
+                  <DetailItem label="Start Time" value={currentTournament?.startTime || '9:00 PM'} />
+                  <DetailItem label="Entry Fee" value={currentTournament?.entryFee || 'FREE (0 BDT)'} />
+                  <DetailItem label="Platform" value={currentTournament?.platform || 'Mobile'} />
                 </div>
 
                 <div className="p-6 bg-cyan/5 border border-cyan/10 rounded-2xl mb-8 backdrop-blur-md">
                   <p className="text-xs text-cyan font-black uppercase tracking-[0.2em] mb-2">Prize Pool Information:</p>
                   <p className="text-sm text-gray-300 font-bold leading-relaxed">
-                    Total: 100 Diamonds. 25 Diamonds per player for the winner squad (100 total).
+                    {currentTournament?.prizePool || 'Total: 100 Diamonds. 25 Diamonds per player for the winner squad (100 total).'}
                   </p>
                 </div>
+
+                {currentTournament?.rules && (
+                  <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl mb-8">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="p-2 bg-cyan/10 rounded-lg">
+                        <FileText className="w-4 h-4 text-cyan" />
+                      </div>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-white italic">Sector Rules & Protocol</h3>
+                    </div>
+                    <div className="prose prose-invert prose-cyan max-w-none">
+                      <div className="text-sm text-gray-400 font-bold leading-loose markdown-body">
+                        <ReactMarkdown>{currentTournament.rules}</ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   {userRegistration ? (

@@ -41,6 +41,12 @@ export interface Tournament {
   winnerTeam?: string;
   victoryDate?: string;
   scrollingText?: string;
+  rules?: string;
+  schedule?: string;
+  startTime?: string;
+  entryFee?: string;
+  platform?: string;
+  prizePool?: string;
   registrationActive: boolean;
   status: 'upcoming' | 'active' | 'completed';
   createdAt: any;

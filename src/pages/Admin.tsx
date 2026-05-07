@@ -115,7 +115,13 @@ export default function Admin({ user }: AdminProps) {
     registrationActive: false,
     winnerTeam: '',
     victoryDate: '',
-    scrollingText: ''
+    scrollingText: '',
+    rules: '',
+    schedule: '',
+    startTime: '',
+    entryFee: '',
+    platform: '',
+    prizePool: ''
   });
   const [isCreatingTournament, setIsCreatingTournament] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -493,7 +499,13 @@ export default function Admin({ user }: AdminProps) {
         registrationActive: selectedTournament.registrationActive,
         winnerTeam: selectedTournament.winnerTeam || '',
         victoryDate: selectedTournament.victoryDate || '',
-        scrollingText: selectedTournament.scrollingText || ''
+        scrollingText: selectedTournament.scrollingText || '',
+        rules: selectedTournament.rules || '',
+        schedule: selectedTournament.schedule || '',
+        startTime: selectedTournament.startTime || '',
+        entryFee: selectedTournament.entryFee || '',
+        platform: selectedTournament.platform || '',
+        prizePool: selectedTournament.prizePool || ''
       });
       setIsCreatingTournament(false);
     }
@@ -1463,7 +1475,13 @@ export default function Admin({ user }: AdminProps) {
                         registrationActive: false,
                         winnerTeam: '',
                         victoryDate: '',
-                        scrollingText: ''
+                        scrollingText: '',
+                        rules: '',
+                        schedule: 'Every Thursday',
+                        startTime: '9:00 PM',
+                        entryFee: 'FREE',
+                        platform: 'Mobile',
+                        prizePool: '100 Diamonds'
                       });
                     }}
                     className="p-2 bg-cyan/10 text-cyan rounded-lg hover:bg-cyan hover:text-dark transition-all"
@@ -1484,7 +1502,13 @@ export default function Admin({ user }: AdminProps) {
                           registrationActive: t.registrationActive,
                           winnerTeam: t.winnerTeam || '',
                           victoryDate: t.victoryDate || '',
-                          scrollingText: t.scrollingText || ''
+                          scrollingText: t.scrollingText || '',
+                          rules: t.rules || '',
+                          schedule: t.schedule || '',
+                          startTime: t.startTime || '',
+                          entryFee: t.entryFee || '',
+                          platform: t.platform || '',
+                          prizePool: t.prizePool || ''
                         });
                       }}
                       className={`w-full text-left p-4 rounded-2xl border transition-all ${
@@ -1568,6 +1592,60 @@ export default function Admin({ user }: AdminProps) {
                         </div>
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Schedule</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Every Thursday"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-bold"
+                            value={tournamentForm.schedule}
+                            onChange={e => setTournamentForm({...tournamentForm, schedule: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Start Time</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 9:00 PM"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-bold"
+                            value={tournamentForm.startTime}
+                            onChange={e => setTournamentForm({...tournamentForm, startTime: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Entry Fee</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. FREE"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-bold"
+                            value={tournamentForm.entryFee}
+                            onChange={e => setTournamentForm({...tournamentForm, entryFee: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Platform</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Mobile"
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-bold"
+                            value={tournamentForm.platform}
+                            onChange={e => setTournamentForm({...tournamentForm, platform: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Prize Pool Summary</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 100 Diamonds total pool..."
+                          className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                          value={tournamentForm.prizePool}
+                          onChange={e => setTournamentForm({...tournamentForm, prizePool: e.target.value})}
+                        />
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Champion Squad (If Completed)</label>
@@ -1598,6 +1676,16 @@ export default function Admin({ user }: AdminProps) {
                           className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[100px] resize-none"
                           value={tournamentForm.scrollingText}
                           onChange={e => setTournamentForm({...tournamentForm, scrollingText: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Tournament Protocol / Rules (Markdown Supported)</label>
+                        <textarea 
+                          placeholder="Define the rules and regulations for this sector..."
+                          className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[200px] resize-y"
+                          value={tournamentForm.rules}
+                          onChange={e => setTournamentForm({...tournamentForm, rules: e.target.value})}
                         />
                       </div>
 
