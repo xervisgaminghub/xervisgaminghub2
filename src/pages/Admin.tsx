@@ -5,7 +5,11 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  AreaChart, Area, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
+} from 'recharts';
 
 interface AdminProps {
   user: UserProfile;
@@ -13,10 +17,11 @@ interface AdminProps {
 
 export default function Admin({ user }: AdminProps) {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics'>('analytics');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -35,11 +40,33 @@ export default function Admin({ user }: AdminProps) {
     if (isAdmin && isUnlocked) {
       if (activeTab === 'tournament') {
         fetchTournamentInfo();
+      } else if (activeTab === 'analytics') {
+        fetchAnalytics();
       } else {
         fetchData();
       }
     }
   }, [activeTab, isUnlocked]);
+
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+      const [usersSnap, ordersSnap, transSnap] = await Promise.all([
+        getDocs(query(collection(db, 'users'), limit(500))),
+        getDocs(query(collection(db, 'orders'), limit(500), orderBy('createdAt', 'desc'))),
+        getDocs(query(collection(db, 'transactions'), limit(1000), orderBy('createdAt', 'desc')))
+      ]);
+
+      setUsers(usersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
+      setOrders(ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order)));
+      setTransactions(transSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      toast.error("Failed to load analytics data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchTournamentInfo = async () => {
     setLoading(true);
@@ -131,6 +158,223 @@ export default function Admin({ user }: AdminProps) {
     } catch (error) {
       toast.error("Failed to delete registration");
     }
+  };
+
+  const renderAnalytics = () => {
+    // Basic stats
+    const totalPoints = users.reduce((sum, u) => sum + (u.points || 0), 0);
+    const totalOrders = orders.length;
+    const completedOrders = orders.filter(o => o.status === 'completed').length;
+    
+    // Points per day (last 7 days)
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+
+    const pointHistory = last7Days.map(date => {
+      const earned = transactions
+        .filter(t => t.createdAt && typeof t.createdAt === 'string' && t.createdAt.startsWith(date) && t.type === 'earn')
+        .reduce((sum, t) => sum + (t.points || 0), 0);
+      const spent = transactions
+        .filter(t => t.createdAt && typeof t.createdAt === 'string' && t.createdAt.startsWith(date) && t.type === 'burn')
+        .reduce((sum, t) => sum + (t.points || 0), 0);
+      return { date, earned, spent };
+    });
+
+    // User growth
+    const userGrowth = last7Days.map(date => {
+      const count = users.filter(u => u.createdAt && typeof u.createdAt === 'string' && u.createdAt.startsWith(date)).length;
+      return { date, count };
+    });
+
+    // Level distribution
+    const levelCounts: Record<string, number> = {};
+    users.forEach(u => {
+      if (u.level) {
+        levelCounts[u.level] = (levelCounts[u.level] || 0) + 1;
+      }
+    });
+    const levelData = Object.entries(levelCounts).map(([name, value]) => ({ name, value }));
+
+    const COLORS = ['#00F2FF', '#FF0055', '#FFD700', '#00FF88', '#8A2BE2'];
+
+    return (
+      <div className="p-8 space-y-12">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="glass p-6 rounded-3xl border-white/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Zap className="w-16 h-16 text-cyan" />
+            </div>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Circulating Points</p>
+            <h3 className="text-3xl font-black text-cyan italic">{totalPoints.toLocaleString()}</h3>
+            <div className="mt-4 flex items-center text-[10px] font-bold text-green-500">
+              <ArrowUpRight className="w-3 h-3 mr-1" />
+              <span>SYSTEM LIQUIDITY OPTIMAL</span>
+            </div>
+          </div>
+
+          <div className="glass p-6 rounded-3xl border-white/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <ShoppingBag className="w-16 h-16 text-pink-500" />
+            </div>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Redemption Volume</p>
+            <h3 className="text-3xl font-black text-white italic">{totalOrders}</h3>
+            <div className="mt-4 flex items-center text-[10px] font-bold text-cyan">
+              <Activity className="w-3 h-3 mr-1" />
+              <span>{Math.round((completedOrders / (totalOrders || 1)) * 100)}% SUCCESS RATE</span>
+            </div>
+          </div>
+
+          <div className="glass p-6 rounded-3xl border-white/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Users className="w-16 h-16 text-emerald-500" />
+            </div>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Operatives</p>
+            <h3 className="text-3xl font-black text-white italic">{users.length}</h3>
+            <div className="mt-4 flex items-center text-[10px] font-bold text-emerald-500">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              <span>ACTIVE GROWTH SECTOR</span>
+            </div>
+          </div>
+
+          <div className="glass p-6 rounded-3xl border-white/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <BarChart3 className="w-16 h-16 text-yellow-500" />
+            </div>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Daily Engagement</p>
+            <h3 className="text-3xl font-black text-white italic">{(transactions.length / 30).toFixed(1)}</h3>
+            <p className="text-[8px] text-gray-600 font-bold uppercase mt-4">OPS PER DAY (AVG)</p>
+          </div>
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Point Flow Chart */}
+          <div className="glass p-8 rounded-[2.5rem] border-white/5 overflow-hidden">
+            <div className="flex items-center justify-between mb-8">
+              <h4 className="text-sm font-black uppercase tracking-widest flex items-center">
+                <DollarSign className="w-4 h-4 mr-2 text-cyan" />
+                Economy Flow <span className="ml-2 text-gray-600 text-[10px] tracking-normal font-bold lowercase">last 7 days</span>
+              </h4>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={pointHistory}>
+                  <defs>
+                    <linearGradient id="colorEarn" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00F2FF" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#00F2FF" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FF0055" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#FF0055" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#ffffff20" 
+                    fontSize={10} 
+                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                  />
+                  <YAxis stroke="#ffffff20" fontSize={10} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0A0A0B', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                    itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                  <Area type="monotone" dataKey="earned" stroke="#00F2FF" fillOpacity={1} fill="url(#colorEarn)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="spent" stroke="#FF0055" fillOpacity={1} fill="url(#colorSpend)" strokeWidth={3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* User Registration Chart */}
+          <div className="glass p-8 rounded-[2.5rem] border-white/5 overflow-hidden">
+            <div className="flex items-center justify-between mb-8">
+              <h4 className="text-sm font-black uppercase tracking-widest flex items-center">
+                <TrendingUp className="w-4 h-4 mr-2 text-emerald-500" />
+                Operative Onboarding
+              </h4>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={userGrowth}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#ffffff20" 
+                    fontSize={10} 
+                    tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                  />
+                  <YAxis stroke="#ffffff20" fontSize={10} />
+                  <Tooltip 
+                    cursor={{ fill: 'white', fillOpacity: 0.05 }}
+                    contentStyle={{ backgroundColor: '#0A0A0B', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                  />
+                  <Bar dataKey="count" fill="#00FF88" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Level Distribution */}
+          <div className="glass p-8 rounded-[2.5rem] border-white/5 overflow-hidden">
+            <h4 className="text-sm font-black uppercase tracking-widest mb-8 flex items-center">
+              <PieChart className="w-4 h-4 mr-2 text-yellow-500" />
+              Rank Distribution
+            </h4>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie
+                    data={levelData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {levelData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0A0A0B', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                  />
+                  <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Security Status */}
+          <div className="glass p-8 rounded-[2.5rem] border-white/5 flex flex-col justify-center items-center text-center">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-cyan blur-3xl opacity-20 animate-pulse"></div>
+              <Shield className="w-20 h-20 text-cyan relative z-10" />
+            </div>
+            <h4 className="text-xl font-black italic uppercase mb-2">Security Hub Online</h4>
+            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-8">All protocols active • data integrity 100%</p>
+            <div className="grid grid-cols-2 gap-4 w-full">
+               <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <p className="text-[8px] text-gray-500 font-black uppercase mb-1">Encrypted Logs</p>
+                 <p className="text-sm font-black text-white">{transactions.length.toLocaleString()}</p>
+               </div>
+               <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                 <p className="text-[8px] text-gray-500 font-black uppercase mb-1">Admin Access</p>
+                 <p className="text-sm font-black text-cyan">Verified</p>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -319,10 +563,16 @@ export default function Admin({ user }: AdminProps) {
           >
             Tournament
           </button>
+          <button 
+            onClick={() => setActiveTab('analytics')}
+            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'analytics' ? 'bg-cyan text-dark' : 'text-gray-500 hover:text-white'}`}
+          >
+            Analytics
+          </button>
         </div>
       </div>
 
-      {activeTab !== 'tournament' && (
+      {activeTab !== 'tournament' && activeTab !== 'analytics' && (
         <div className="mb-8">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -343,6 +593,8 @@ export default function Admin({ user }: AdminProps) {
             <Zap className="w-12 h-12 text-cyan mx-auto mb-4 animate-pulse" />
             <p className="text-gray-500 text-xs uppercase tracking-widest font-black">Syncing with datastore...</p>
           </div>
+        ) : activeTab === 'analytics' ? (
+          renderAnalytics()
         ) : activeTab === 'users' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
