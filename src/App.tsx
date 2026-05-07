@@ -19,7 +19,7 @@ import Footer from './components/layout/Footer';
 import WhatsAppButton from './components/layout/WhatsAppButton';
 import AnnouncementBanner from './components/layout/AnnouncementBanner';
 import LoadingScreen from './components/ui/LoadingScreen';
-import RainEffect from './components/ui/RainEffect';
+import StarField from './components/ui/StarField';
 import AdBlockDetector from './components/ui/AdBlockDetector';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
@@ -68,7 +68,7 @@ function AppRoutes() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      <RainEffect />
+      <StarField />
       <AdBlockDetector />
       <AnnouncementBanner />
       <Navbar user={user} />
