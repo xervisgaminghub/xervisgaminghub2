@@ -1,36 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search, Trophy } from 'lucide-react';
+import { ShoppingCart, Diamond, ShieldCheck, CreditCard, Send, Folder, Download, Search, Trophy, Gamepad2, Activity } from 'lucide-react';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  subFolder: string;
+  category: string;
+}
 
 interface StoreProps {
   user: UserProfile | null;
 }
 
-const PRODUCTS = [
-  { id: 'ff-weekly', name: 'Free fire weekly', price: 165, subFolder: 'Free Fire Top up', category: 'Membership' },
-  { id: 'ff-weekly-lite', name: 'Free Fire Weekly Lite', price: 60, subFolder: 'Free Fire Top up', category: 'Membership' },
-  { id: 'ff-monthly', name: 'Free Fire Monthly', price: 790, subFolder: 'Free Fire Top up', category: 'Membership' },
-  { id: 'ff-lup', name: 'Free Fire Full level up pass', price: 490, subFolder: 'Free Fire Top up', category: 'Membership' },
-  { id: 'ff-25d', name: 'Free Fire 25 Diamond', price: 30, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { id: 'ff-50d', name: 'Free Fire 50 Diamond', price: 45, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { id: 'ff-100d', name: 'Free Fire 100 Diamond', price: 85, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { id: 'ff-115d', name: 'Free Fire 115 Diamond', price: 90, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { id: 'ff-240d', name: 'Free Fire 240 Diamond', price: 170, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { id: 'ff-355d', name: 'Free Fire 355 Diamonds', price: 250, subFolder: 'Free Fire Top up', category: 'Diamond' },
-  { id: 'ff-505d', name: 'Free Fire 505 Diamonds', price: 370, subFolder: 'Free Fire Top up', category: 'Diamond' },
-];
-
-const SUB_FOLDERS = [
+const DEFAULT_SUB_FOLDERS = [
   { name: 'Free Fire Top up', icon: Diamond, color: 'text-cyan' },
+  { name: 'PUBG Mobile UC', icon: Gamepad2, color: 'text-orange-500' },
 ];
 
 export default function Store({ user }: StoreProps) {
+  const [products, setProducts] = useState<Product[]>([]);
   const [activeFolder, setActiveFolder] = useState('Free Fire Top up');
-  const [selectedProduct, setSelectedProduct] = useState<typeof PRODUCTS[0] | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [orderData, setOrderData] = useState({
     uid: '',
@@ -40,6 +36,35 @@ export default function Store({ user }: StoreProps) {
     paymentMethod: 'bKash'
   });
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const q = query(collection(db, 'products'), orderBy('name', 'asc'));
+        const snapshot = await getDocs(q);
+        const productsList = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Product[];
+        setProducts(productsList);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const highlightQuantity = (name: string) => {
+    const parts = name.split(/(\d+)/);
+    return parts.map((part, i) => 
+      /\d+/.test(part) 
+        ? <span key={i} className="text-cyan font-black">{part}</span> 
+        : part
+    );
+  };
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +107,13 @@ export default function Store({ user }: StoreProps) {
     }
   };
 
-  const filteredProducts = PRODUCTS.filter(p => 
+  const subFolders = Array.from(new Set(products.map(p => p.subFolder))).map(name => ({
+    name,
+    icon: DEFAULT_SUB_FOLDERS.find(f => f.name === name)?.icon || Folder,
+    color: DEFAULT_SUB_FOLDERS.find(f => f.name === name)?.color || 'text-cyan'
+  }));
+
+  const filteredProducts = products.filter(p => 
     p.subFolder === activeFolder && 
     (p.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -96,35 +127,39 @@ export default function Store({ user }: StoreProps) {
 
       {/* Folder Navigation */}
       <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
-        {SUB_FOLDERS.map((folder) => {
-          const Icon = folder.icon;
-          const isActive = activeFolder === folder.name;
-          return (
-            <button
-              key={folder.name}
-              onClick={() => {
-                setActiveFolder(folder.name);
-                setSelectedProduct(null);
-              }}
-              className={`flex items-center space-x-3 px-6 py-4 rounded-2xl border transition-all relative overflow-hidden group ${
-                isActive 
-                  ? 'bg-cyan/10 border-cyan/40 text-cyan shadow-[0_0_25px_rgba(0,255,255,0.1)]' 
-                  : 'bg-white/[0.03] border-white/5 text-gray-500 hover:border-white/20 hover:text-white'
-              }`}
-            >
-              <div className={`p-2 rounded-lg bg-black/40 ${isActive ? folder.color : 'text-gray-600'}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="font-black uppercase tracking-widest text-xs">{folder.name}</span>
-              {isActive && (
-                <motion.div 
-                  layoutId="active-folder-glow"
-                  className="absolute inset-0 bg-cyan/5 blur-xl -z-10"
-                />
-              )}
-            </button>
-          );
-        })}
+        {subFolders.length > 0 ? (
+          subFolders.map((folder) => {
+            const Icon = folder.icon;
+            const isActive = activeFolder === folder.name;
+            return (
+              <button
+                key={folder.name}
+                onClick={() => {
+                  setActiveFolder(folder.name);
+                  setSelectedProduct(null);
+                }}
+                className={`flex items-center space-x-3 px-6 py-4 rounded-2xl border transition-all relative overflow-hidden group ${
+                  isActive 
+                    ? 'bg-cyan/10 border-cyan/40 text-cyan shadow-[0_0_25px_rgba(0,255,255,0.1)]' 
+                    : 'bg-white/[0.03] border-white/5 text-gray-500 hover:border-white/20 hover:text-white'
+                }`}
+              >
+                <div className={`p-2 rounded-lg bg-black/40 ${isActive ? folder.color : 'text-gray-600'}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <span className="font-black uppercase tracking-widest text-xs">{folder.name}</span>
+                {isActive && (
+                  <motion.div 
+                    layoutId="active-folder-glow"
+                    className="absolute inset-0 bg-cyan/5 blur-xl -z-10"
+                  />
+                )}
+              </button>
+            );
+          })
+        ) : !fetchLoading && (
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">No product categories detected</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -142,7 +177,12 @@ export default function Store({ user }: StoreProps) {
             />
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {fetchLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 glass rounded-3xl border-white/5">
+              <Activity className="w-12 h-12 text-cyan animate-pulse mb-4" />
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest animate-pulse">Initializing Secure Resource Catalog...</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-24 glass rounded-3xl border-dashed border-white/10">
               <Diamond className="w-16 h-16 text-gray-700 mx-auto mb-4 opacity-20" />
               <h3 className="text-xl font-black text-gray-600 uppercase tracking-widest mb-2">No Resources Found</h3>
@@ -170,13 +210,16 @@ export default function Store({ user }: StoreProps) {
                       {product.id === 'ff-lup' ? (
                         <Trophy className="w-16 h-16 text-yellow-500" />
                       ) : (
-                        product.category === 'Diamond' ? '💎' : '💳'
+                        product.category === 'Diamond' ? '💎' : 
+                        product.category === 'UC' ? '💰' : '💳'
                       )}
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest truncate">{product.name}</h3>
+                      <h3 className="text-xs text-white font-black uppercase tracking-widest truncate group-hover:text-cyan transition-colors">
+                        {highlightQuantity(product.name)}
+                      </h3>
                       <div className="flex items-center justify-between">
-                        <p className="text-cyan font-black text-xl tracking-tighter">৳{product.price}</p>
+                        <p className="text-cyan font-bold text-base tracking-tighter">৳{product.price}</p>
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all ${selectedProduct?.id === product.id ? 'bg-cyan border-cyan text-dark' : 'border-white/10 text-gray-600'}`}>
                           <ShoppingCart className="w-3 h-3" />
                         </div>
@@ -201,8 +244,8 @@ export default function Store({ user }: StoreProps) {
               <form onSubmit={handleOrder} className="space-y-4">
                 <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
                   <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Selected Product</p>
-                  <p className="font-bold text-cyan">{selectedProduct.name}</p>
-                  <p className="text-2xl font-black">{selectedProduct.price} BDT</p>
+                  <p className="font-black text-white text-lg">{highlightQuantity(selectedProduct.name)}</p>
+                  <p className="text-lg font-bold text-cyan">{selectedProduct.price} BDT</p>
                 </div>
 
                 <div className="space-y-4">

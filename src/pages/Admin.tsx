@@ -4,7 +4,7 @@ import { UserProfile, Order, TournamentRegistration } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { getRank } from '../lib/rankUtils';
-import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp, addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { 
@@ -40,8 +40,11 @@ interface FirestoreErrorInfo {
 }
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const isPermissionError = errorMessage.toLowerCase().includes('permission') || errorMessage.toLowerCase().includes('denied');
+  
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMessage,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -58,7 +61,13 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   }
   const errString = JSON.stringify(errInfo);
   console.error('Firestore Error: ', errString);
-  toast.error("Operation failed. Check console for details.");
+  
+  if (isPermissionError) {
+    toast.error("Access Denied: You don't have permission to perform this action. Your email must be verified as admin in rules.");
+  } else {
+    toast.error("Operation failed. Check console for details.");
+  }
+  
   throw new Error(errString);
 }
 
@@ -66,16 +75,34 @@ interface AdminProps {
   user: UserProfile;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  subFolder: string;
+  category: string;
+}
+
 export default function Admin({ user }: AdminProps) {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics'>('analytics');
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products'>('analytics');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  // Product Form State
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    price: 0,
+    subFolder: 'Free Fire Top up',
+    category: 'Diamond'
+  });
 
   // Tournament Info State
   const [winnerTeam, setWinnerTeam] = useState('');
@@ -93,11 +120,105 @@ export default function Admin({ user }: AdminProps) {
         fetchTournamentInfo();
       } else if (activeTab === 'analytics') {
         fetchAnalytics();
+      } else if (activeTab === 'products') {
+        fetchProducts();
       } else {
         fetchData();
       }
     }
   }, [activeTab, isUnlocked]);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, 'products'), orderBy('name', 'asc'));
+      const snapshot = await getDocs(q);
+      setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      handleFirestoreError(error, OperationType.LIST, 'products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating('product-save');
+    try {
+      if (editingProduct) {
+        await updateDoc(doc(db, 'products', editingProduct.id), productForm);
+        toast.success("Product updated successfully!");
+      } else {
+        await addDoc(collection(db, 'products'), {
+          ...productForm,
+          createdAt: serverTimestamp()
+        });
+        toast.success("Product added successfully!");
+      }
+      setEditingProduct(null);
+      setProductForm({ name: '', price: 0, subFolder: 'Free Fire Top up', category: 'Diamond' });
+      fetchProducts();
+    } catch (error) {
+      handleFirestoreError(error, editingProduct ? OperationType.UPDATE : OperationType.CREATE, 'products');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    if (!window.confirm("Delete this product?")) return;
+    try {
+      await deleteDoc(doc(db, 'products', id));
+      toast.success("Product deleted");
+      fetchProducts();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `products/${id}`);
+    }
+  };
+
+  const seedInitialProducts = async () => {
+    if (!window.confirm("This will seed the initial product list to Firestore. Continue?")) return;
+    setLoading(true);
+    const initialProducts = [
+      { name: 'Free fire weekly', price: 165, subFolder: 'Free Fire Top up', category: 'Membership' },
+      { name: 'Free Fire Weekly Lite', price: 60, subFolder: 'Free Fire Top up', category: 'Membership' },
+      { name: 'Free Fire Monthly', price: 790, subFolder: 'Free Fire Top up', category: 'Membership' },
+      { name: 'Free Fire Full level up pass', price: 490, subFolder: 'Free Fire Top up', category: 'Membership' },
+      { name: 'Free Fire 25 Diamond', price: 30, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'Free Fire 50 Diamond', price: 45, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'Free Fire 100 Diamond', price: 85, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'Free Fire 115 Diamond', price: 90, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'Free Fire 240 Diamond', price: 170, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'Free Fire 355 Diamonds', price: 250, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'Free Fire 505 Diamonds', price: 370, subFolder: 'Free Fire Top up', category: 'Diamond' },
+      { name: 'PUBG Mobile 30 UC', price: 65, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 60 UC', price: 125, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 300 UC', price: 620, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 600 UC', price: 1150, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 1500 UC', price: 2800, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 3000 UC', price: 5600, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 6000 UC', price: 11500, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 12000 UC', price: 22500, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 18000 UC', price: 33500, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 24000 UC', price: 44500, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 30000 UC', price: 56000, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 36000 UC', price: 67000, subFolder: 'PUBG Mobile UC', category: 'UC' },
+      { name: 'PUBG Mobile 60000 UC', price: 111000, subFolder: 'PUBG Mobile UC', category: 'UC' },
+    ];
+
+    try {
+      for (const p of initialProducts) {
+        await addDoc(collection(db, 'products'), { ...p, createdAt: serverTimestamp() });
+      }
+      toast.success("Initial products seeded successfully!");
+      fetchProducts();
+    } catch (error) {
+      toast.error("Failed to seed products.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -729,6 +850,12 @@ export default function Admin({ user }: AdminProps) {
           >
             Analytics
           </button>
+          <button 
+            onClick={() => setActiveTab('products')}
+            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'products' ? 'bg-cyan text-dark' : 'text-gray-500 hover:text-white'}`}
+          >
+            Products
+          </button>
         </div>
       </div>
 
@@ -765,6 +892,113 @@ export default function Admin({ user }: AdminProps) {
           </div>
         ) : activeTab === 'analytics' ? (
           renderAnalytics()
+        ) : activeTab === 'products' ? (
+          <div className="p-8 space-y-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black italic uppercase">Resource Inventory</h3>
+              <button 
+                onClick={seedInitialProducts}
+                className="text-[10px] font-black uppercase tracking-widest text-cyan/50 hover:text-cyan transition-colors"
+                title="Initialize with default product list"
+              >
+                Seed Default Resources
+              </button>
+            </div>
+
+            <form onSubmit={saveProduct} className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/5 p-6 rounded-3xl border border-white/5">
+              <div className="space-y-1">
+                <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-2">Product Name</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. Free Fire 100 Diamond"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 px-4 focus:border-cyan outline-none text-xs text-white"
+                  value={productForm.name}
+                  onChange={e => setProductForm({...productForm, name: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-2">Price (BDT)</label>
+                <input 
+                  type="number"
+                  required
+                  placeholder="Price"
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 px-4 focus:border-cyan outline-none text-xs text-white"
+                  value={productForm.price || ''}
+                  onChange={e => setProductForm({...productForm, price: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-2">Sub-Folder / Category</label>
+                <select 
+                  className="w-full bg-black/40 border border-white/5 rounded-xl py-3 px-4 focus:border-cyan outline-none text-xs text-white"
+                  value={productForm.subFolder}
+                  onChange={e => setProductForm({...productForm, subFolder: e.target.value})}
+                >
+                  <option value="Free Fire Top up">Free Fire Top up</option>
+                  <option value="PUBG Mobile UC">PUBG Mobile UC</option>
+                  <option value="Gift Card">Gift Card</option>
+                  <option value="Voucher">Voucher</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button 
+                  type="submit"
+                  disabled={isUpdating === 'product-save'}
+                  className="btn-cyan w-full py-3 flex items-center justify-center space-x-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span className="font-black uppercase tracking-widest text-[10px]">{editingProduct ? 'Update Resource' : 'Add Resource'}</span>
+                </button>
+                {editingProduct && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setEditingProduct(null);
+                      setProductForm({ name: '', price: 0, subFolder: 'Free Fire Top up', category: 'Diamond' });
+                    }}
+                    className="ml-2 bg-white/5 p-3 rounded-xl border border-white/5 text-gray-500 hover:text-white"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map(p => (
+                <div key={p.id} className="glass p-5 rounded-3xl border-white/5 group hover:border-cyan/30 transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-3 bg-cyan/5 rounded-2xl border border-cyan/10">
+                      <ShoppingBag className="w-5 h-5 text-cyan" />
+                    </div>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => {
+                          setEditingProduct(p);
+                          setProductForm({ name: p.name, price: p.price, subFolder: p.subFolder, category: p.category });
+                        }}
+                        className="p-2 bg-white/5 rounded-lg border border-white/5 text-gray-400 hover:text-cyan hover:border-cyan/50 transition-all"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button 
+                        onClick={() => deleteProduct(p.id)}
+                        className="p-2 bg-white/5 rounded-lg border border-white/5 text-gray-400 hover:text-red hover:border-red/50 transition-all"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <h4 className="text-sm font-black uppercase text-white mb-1">{p.name}</h4>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{p.subFolder}</span>
+                    <span className="text-cyan font-black italic">৳{p.price}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : activeTab === 'users' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
