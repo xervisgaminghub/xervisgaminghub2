@@ -427,6 +427,43 @@ export default function Admin({ user }: AdminProps) {
     try {
       const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        // Try to handle legacy data if any
+        const infoDoc = await getDoc(doc(db, 'tournament_info', 'current'));
+        if (infoDoc.exists()) {
+          const legacy = infoDoc.data();
+          const newDoc = await addDoc(collection(db, 'tournaments'), {
+            title: 'Free Fire Battle League',
+            status: 'active',
+            registrationActive: legacy.registrationActive ?? false,
+            winnerTeam: legacy.winnerTeam || '',
+            victoryDate: legacy.victoryDate || '',
+            scrollingText: legacy.scrollingText || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+          
+          // Migrate registrations that don't have tournamentId
+          const regQ = query(collection(db, 'tournamentRegistrations'), where('tournamentId', '==', '')); // Old ones didn't have this field
+          const regSnapshot = await getDocs(regQ);
+          // Also check registrations with NO tournamentId field at all
+          const allRegs = await getDocs(collection(db, 'tournamentRegistrations'));
+          
+          for (const d of allRegs.docs) {
+            if (!d.data().tournamentId) {
+              await updateDoc(doc(db, 'tournamentRegistrations', d.id), {
+                tournamentId: newDoc.id
+              });
+            }
+          }
+          
+          // Refresh list
+          fetchTournaments();
+          return;
+        }
+      }
+
       const fetchedTournaments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tournament));
       setTournaments(fetchedTournaments);
       
@@ -443,6 +480,15 @@ export default function Admin({ user }: AdminProps) {
   useEffect(() => {
     if (selectedTournament) {
       fetchRegistrations(selectedTournament.id);
+      setTournamentForm({
+        title: selectedTournament.title,
+        status: selectedTournament.status,
+        registrationActive: selectedTournament.registrationActive,
+        winnerTeam: selectedTournament.winnerTeam || '',
+        victoryDate: selectedTournament.victoryDate || '',
+        scrollingText: selectedTournament.scrollingText || ''
+      });
+      setIsCreatingTournament(false);
     }
   }, [selectedTournament]);
 
