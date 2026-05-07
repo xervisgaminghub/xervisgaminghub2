@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 import { Mail, Lock, User, Phone, CheckCircle2, Users } from 'lucide-react';
 import { generateGamingUsername } from '../services/geminiService';
 import { sendUserDataToSheet } from '../services/webhookService';
+import { getRank } from '../lib/rankUtils';
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,7 @@ export default function Signup() {
         phone: formData.phone,
         username: username,
         points: 10,
-        level: 'Silver',
+        level: getRank(10),
         createdAt: new Date().toISOString()
       };
 
@@ -83,7 +84,7 @@ export default function Signup() {
           phone: '',
           username: username,
           points: 10,
-          level: 'Silver',
+          level: getRank(10),
           referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
           createdAt: new Date().toISOString()
         };

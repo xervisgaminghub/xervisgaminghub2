@@ -7,6 +7,7 @@ import { UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import AdSense from '../components/AdSense';
+import { getPointsToNextRank } from '../lib/rankUtils';
 
 interface HomeProps {
   user: UserProfile | null;
@@ -24,6 +25,8 @@ const HUB_LINKS = [
 export default function Home({ user }: HomeProps) {
   const [stats, setStats] = useState({ purchases: 0 });
   const [scrollingText, setScrollingText] = useState('🔥 Welcome to Xervis Gaming Hub 🎮 | Play • Earn • Redeem 💰 | 💎 Free Fire Diamond Top-Up Available Now ⚡ | 🎁 Watch Ads & Unlock Free Downloads | 🏆 Level Up System Active – Reach Diamond & Crown 👑 | 💸 10 Points = 1 BDT | 🎯 Daily Earning সুযোগ চলছে | 🚨 AdBlock বন্ধ না করলে Download Unlock হবে না ❌ | 🎮 Mini Games খেলুন এবং প্রতি মিনিটে Point Earn করুন | 📡 Live Tournament Updates Coming Soon | 🚀 Join Now & Start Earning Today!');
+
+  const { nextRank, pointsNeeded, progress: xpPercentage } = getPointsToNextRank(user?.points || 0);
 
   useEffect(() => {
     // Subscribe to tournament info for scrolling text
@@ -57,9 +60,6 @@ export default function Home({ user }: HomeProps) {
 
     fetchStats();
   }, [user]);
-
-  const xpProgress = user ? (user.points % 1000) : 0;
-  const xpPercentage = (xpProgress / 1000) * 100;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
@@ -120,7 +120,7 @@ export default function Home({ user }: HomeProps) {
             <div className="mt-8 pt-6 border-t border-white/5">
               <div className="flex justify-between text-[10px] mb-2 font-black uppercase tracking-widest">
                 <span className="text-cyan">Progression Matrix</span>
-                <span className="text-gray-500">{user ? xpProgress : 0} / 1000 XP</span>
+                <span className="text-gray-500">{user ? (nextRank ? `${pointsNeeded} to ${nextRank}` : 'MAX LEVEL') : 'OPERATIVE OFFLINE'}</span>
               </div>
               <div className="h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
                 <motion.div 

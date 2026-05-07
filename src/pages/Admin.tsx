@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { UserProfile, Order, TournamentRegistration } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { getRank } from '../lib/rankUtils';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -119,6 +120,52 @@ export default function Admin({ user }: AdminProps) {
     } catch (error) {
       console.error("Global analytics fetch error:", error);
       toast.error("Partial analytics data loaded.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const syncRanks = async () => {
+    if (!window.confirm("This will recalculate and update ranks for ALL users based on their current points. Proceed?")) return;
+    
+    setLoading(true);
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const batch: any[] = [];
+      
+      for (const userDoc of usersSnap.docs) {
+        const data = userDoc.data();
+        const currentPoints = data.points || 0;
+        const currentLevel = data.level;
+        const correctLevel = getRank(currentPoints);
+        
+        if (currentLevel !== correctLevel) {
+          batch.push({
+            ref: doc(db, 'users', userDoc.id),
+            level: correctLevel
+          });
+        }
+      }
+      
+      if (batch.length === 0) {
+        toast.success("All users already have correct ranks!");
+        return;
+      }
+      
+      // Update in chunks to avoid batch limits if necessary, 
+      // but for small sets simple loop is fine or actual batch
+      let updatedCount = 0;
+      for (const item of batch) {
+        await updateDoc(item.ref, { level: item.level });
+        updatedCount++;
+      }
+      
+      toast.success(`Successfully synced ${updatedCount} user ranks!`);
+      fetchAnalytics();
+      fetchData();
+    } catch (error) {
+      console.error("Error syncing ranks:", error);
+      toast.error("Failed to sync some ranks.");
     } finally {
       setLoading(false);
     }
@@ -498,8 +545,12 @@ export default function Admin({ user }: AdminProps) {
 
     setIsUpdating(targetUserId);
     try {
-      await updateDoc(doc(db, 'users', targetUserId), { points });
-      toast.success("Points updated successfully");
+      const level = getRank(points);
+      await updateDoc(doc(db, 'users', targetUserId), { 
+        points,
+        level
+      });
+      toast.success(`Points updated. New Rank: ${level}`);
       fetchData();
     } catch (error) {
       toast.error("Failed to update points");
@@ -629,8 +680,8 @@ export default function Admin({ user }: AdminProps) {
       </div>
 
       {activeTab !== 'tournament' && activeTab !== 'analytics' && (
-        <div className="mb-8">
-          <div className="relative">
+        <div className="mb-8 flex gap-4">
+          <div className="relative flex-grow">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input 
               type="text"
@@ -640,6 +691,16 @@ export default function Admin({ user }: AdminProps) {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
+          {activeTab === 'users' && (
+            <button 
+              onClick={syncRanks}
+              className="bg-cyan/10 hover:bg-cyan/20 text-cyan border border-cyan/20 px-6 rounded-2xl flex items-center space-x-2 transition-all active:scale-95"
+              title="Recalculate ranks for all users"
+            >
+              <Trophy className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Sync Ranks</span>
+            </button>
+          )}
         </div>
       )}
 
