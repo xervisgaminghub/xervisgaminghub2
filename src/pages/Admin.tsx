@@ -8,9 +8,59 @@ import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, dele
 import { toast } from 'sonner';
 import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
+import { auth } from '../lib/firebase';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  const errString = JSON.stringify(errInfo);
+  console.error('Firestore Error: ', errString);
+  toast.error("Operation failed. Check console for details.");
+  throw new Error(errString);
+}
 
 interface AdminProps {
   user: UserProfile;
@@ -156,8 +206,13 @@ export default function Admin({ user }: AdminProps) {
       // but for small sets simple loop is fine or actual batch
       let updatedCount = 0;
       for (const item of batch) {
-        await updateDoc(item.ref, { level: item.level });
-        updatedCount++;
+        try {
+          await updateDoc(item.ref, { level: item.level });
+          updatedCount++;
+        } catch (err) {
+          console.error(`Failed to sync rank for ${item.ref.id}:`, err);
+          // Continue with others
+        }
       }
       
       toast.success(`Successfully synced ${updatedCount} user ranks!`);
@@ -165,7 +220,7 @@ export default function Admin({ user }: AdminProps) {
       fetchData();
     } catch (error) {
       console.error("Error syncing ranks:", error);
-      toast.error("Failed to sync some ranks.");
+      handleFirestoreError(error, OperationType.LIST, 'users');
     } finally {
       setLoading(false);
     }
@@ -205,8 +260,7 @@ export default function Admin({ user }: AdminProps) {
       }, { merge: true });
       toast.success("Tournament winner updated successfully!");
     } catch (error) {
-      console.error("Error updating winner info:", error);
-      toast.error("Failed to update tournament info.");
+      handleFirestoreError(error, OperationType.UPDATE, 'tournament_info/current');
     } finally {
       setIsUpdating(null);
     }
@@ -222,8 +276,7 @@ export default function Admin({ user }: AdminProps) {
       }, { merge: true });
       toast.success("Alert scroll text updated successfully!");
     } catch (error) {
-      console.error("Error updating alert text:", error);
-      toast.error("Failed to update alert text.");
+      handleFirestoreError(error, OperationType.UPDATE, 'tournament_info/current');
     } finally {
       setIsUpdating(null);
     }
@@ -246,7 +299,7 @@ export default function Admin({ user }: AdminProps) {
       toast.success(`Registration ${status}`);
       fetchTournamentInfo();
     } catch (error) {
-      toast.error("Failed to update registration");
+      handleFirestoreError(error, OperationType.UPDATE, `tournamentRegistrations/${regId}`);
     } finally {
       setIsUpdating(null);
     }
@@ -259,7 +312,7 @@ export default function Admin({ user }: AdminProps) {
       toast.success("Registration deleted");
       fetchTournamentInfo();
     } catch (error) {
-      toast.error("Failed to delete registration");
+      handleFirestoreError(error, OperationType.DELETE, `tournamentRegistrations/${regId}`);
     }
   };
 
@@ -384,7 +437,7 @@ export default function Admin({ user }: AdminProps) {
                     tickFormatter={(val) => val.split('-').slice(1).join('/')}
                   />
                   <YAxis stroke="#ffffff20" fontSize={10} />
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#0A0A0B', border: '1px solid #ffffff10', borderRadius: '12px' }}
                     itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
                   />
@@ -415,7 +468,7 @@ export default function Admin({ user }: AdminProps) {
                     tickFormatter={(val) => val.split('-').slice(1).join('/')}
                   />
                   <YAxis stroke="#ffffff20" fontSize={10} />
-                  <Tooltip 
+                  <RechartsTooltip 
                     cursor={{ fill: 'white', fillOpacity: 0.05 }}
                     contentStyle={{ backgroundColor: '#0A0A0B', border: '1px solid #ffffff10', borderRadius: '12px' }}
                   />
@@ -447,7 +500,7 @@ export default function Admin({ user }: AdminProps) {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#0A0A0B', border: '1px solid #ffffff10', borderRadius: '12px' }}
                   />
                   <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
@@ -499,7 +552,7 @@ export default function Admin({ user }: AdminProps) {
       if (activeTab === 'users') {
         const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
-        setUsers(snapshot.docs.map(doc => doc.data() as UserProfile));
+        setUsers(snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile)));
       } else {
         const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
@@ -507,7 +560,7 @@ export default function Admin({ user }: AdminProps) {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to fetch administrative data.");
+      handleFirestoreError(error, OperationType.LIST, activeTab);
     } finally {
       setLoading(false);
     }
@@ -531,7 +584,7 @@ export default function Admin({ user }: AdminProps) {
       toast.success(`User role updated to ${newRole}`);
       fetchData();
     } catch (error) {
-      toast.error("Failed to update role");
+      handleFirestoreError(error, OperationType.UPDATE, `users/${targetUserId}`);
     } finally {
       setIsUpdating(null);
     }
@@ -553,7 +606,7 @@ export default function Admin({ user }: AdminProps) {
       toast.success(`Points updated. New Rank: ${level}`);
       fetchData();
     } catch (error) {
-      toast.error("Failed to update points");
+      handleFirestoreError(error, OperationType.UPDATE, `users/${targetUserId}`);
     } finally {
       setIsUpdating(null);
     }
@@ -566,7 +619,7 @@ export default function Admin({ user }: AdminProps) {
       toast.success(`Order status updated to ${newStatus}`);
       fetchData();
     } catch (error) {
-      toast.error("Failed to update order status");
+      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
     } finally {
       setIsUpdating(null);
     }
@@ -579,7 +632,7 @@ export default function Admin({ user }: AdminProps) {
       toast.success("Order deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete order");
+      handleFirestoreError(error, OperationType.DELETE, `orders/${orderId}`);
     }
   };
 
