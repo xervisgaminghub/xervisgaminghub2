@@ -63,7 +63,14 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   console.error('Firestore Error: ', errString);
   
   if (isPermissionError) {
-    toast.error("Access Denied: You don't have permission to perform this action. Your email must be verified as admin in rules.");
+    toast.error(`Access Denied: ${errorMessage}. Path: ${path}`);
+    console.error("Permission check failed for:", {
+      email: auth.currentUser?.email,
+      uid: auth.currentUser?.uid,
+      emailVerified: auth.currentUser?.emailVerified,
+      operationType,
+      path
+    });
   } else {
     toast.error("Operation failed. Check console for details.");
   }
