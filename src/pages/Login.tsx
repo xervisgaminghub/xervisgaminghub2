@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, Gamepad2, X } from 'lucide-react';
+import { generateGamingUsername } from '../services/geminiService';
+import { sendUserDataToSheet } from '../services/webhookService';
+import { getRank } from '../lib/rankUtils';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -48,7 +52,29 @@ export default function Login() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user profile exists
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        const username = await generateGamingUsername(user.displayName || 'Gamer');
+        const userData = {
+          uid: user.uid,
+          name: user.displayName || '',
+          email: user.email || '',
+          age: 18, // Default for Google
+          phone: '',
+          username: username,
+          points: 10,
+          level: getRank(10).name,
+          referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, 'users', user.uid), userData);
+        await sendUserDataToSheet(userData);
+      }
+
       toast.success("Welcome back, Gamer!");
       navigate('/dashboard');
     } catch (error: any) {

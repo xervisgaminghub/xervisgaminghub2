@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ import { sendUserDataToSheet } from '../services/webhookService';
 import { getRank } from '../lib/rankUtils';
 
 export default function Signup() {
+  const { firebaseUser, user: profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -22,6 +24,17 @@ export default function Signup() {
     acceptTerms: false
   });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (firebaseUser && !profile) {
+      setFormData(prev => ({
+        ...prev,
+        name: firebaseUser.displayName || prev.name,
+        email: firebaseUser.email || prev.email,
+        // No password needed if already authenticated
+      }));
+    }
+  }, [firebaseUser, profile]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +49,12 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
+      let user = auth.currentUser;
+      
+      if (!user) {
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        user = userCredential.user;
+      }
 
       // Generate AI Username
       const username = await generateGamingUsername(formData.name);
@@ -50,7 +67,8 @@ export default function Signup() {
         phone: formData.phone,
         username: username,
         points: 10,
-        level: getRank(10),
+        level: getRank(10).name,
+        referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         createdAt: new Date().toISOString()
       };
 
@@ -84,7 +102,7 @@ export default function Signup() {
           phone: '',
           username: username,
           points: 10,
-          level: getRank(10),
+          level: getRank(10).name,
           referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
           createdAt: new Date().toISOString()
         };
@@ -151,17 +169,19 @@ export default function Signup() {
             />
           </div>
 
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-            <input 
-              type="password" 
-              placeholder="Password" 
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-cyan outline-none transition-all"
-              value={formData.password}
-              onChange={e => setFormData({...formData, password: e.target.value})}
-            />
-          </div>
+          {!firebaseUser && (
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <input 
+                type="password" 
+                placeholder="Password" 
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:border-cyan outline-none transition-all"
+                value={formData.password}
+                onChange={e => setFormData({...formData, password: e.target.value})}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
@@ -221,7 +241,7 @@ export default function Signup() {
             disabled={loading}
             className="btn-neon w-full mt-6 py-4 disabled:opacity-50"
           >
-            {loading ? 'Creating Account...' : 'Initialize Profile'}
+            {loading ? 'Processing...' : (firebaseUser ? 'Complete Profile' : 'Initialize Profile')}
           </button>
         </form>
 

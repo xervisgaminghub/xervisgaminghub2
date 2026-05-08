@@ -396,7 +396,7 @@ export default function Admin({ user }: AdminProps) {
         const data = userDoc.data();
         const currentPoints = data.points || 0;
         const currentLevel = data.level;
-        const correctLevel = getRank(currentPoints);
+        const correctLevel = getRank(currentPoints).name;
         
         if (currentLevel !== correctLevel) {
           batch.push({
@@ -889,7 +889,8 @@ export default function Admin({ user }: AdminProps) {
 
     setIsUpdating(targetUserId);
     try {
-      const level = getRank(points);
+      const rank = getRank(points);
+      const level = rank.name;
       await updateDoc(doc(db, 'users', targetUserId), { 
         points,
         level

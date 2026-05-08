@@ -64,7 +64,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, loading, firebaseUser } = useAuth();
 
   if (loading) return <LoadingScreen />;
 
@@ -78,7 +78,7 @@ function AppRoutes() {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home user={user} />} />
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!firebaseUser ? <Login /> : (user ? <Navigate to="/dashboard" /> : <Navigate to="/signup" />)} />
           <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/dashboard" />} />
           
           {/* Protected Routes */}
