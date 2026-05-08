@@ -3,7 +3,7 @@ import { UserProfile, Order } from '../types';
 import { useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { Zap, Trophy, Users, History, Copy, Gift, User, Shield } from 'lucide-react';
+import { Zap, Trophy, Users, History, Copy, Gift, User, Shield, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -152,10 +152,15 @@ export default function Dashboard({ user }: DashboardProps) {
 
         {/* Profile Info */}
         <div className="glass p-8 rounded-3xl border-white/10">
-          <h3 className="text-xl mb-8 flex items-center space-x-2">
-            <User className="w-5 h-5 text-cyan" />
-            <span>Profile Details</span>
-          </h3>
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-xl flex items-center space-x-2">
+              <User className="w-5 h-5 text-cyan" />
+              <span>Profile Details</span>
+            </h3>
+            <Link to="/settings" className="p-2 bg-white/5 text-gray-400 hover:text-cyan rounded-lg transition-all" title="Edit Profile">
+              <ShieldCheck className="w-5 h-5" />
+            </Link>
+          </div>
           <div className="space-y-6">
             <DetailItem label="Full Name" value={user.name} />
             <DetailItem label="Email Address" value={user.email} />
