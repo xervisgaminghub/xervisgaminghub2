@@ -393,18 +393,29 @@ export default function Tournament({ user }: TournamentProps) {
               <div className="stat-panel border-white/5 bg-black/40">
                 <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Operational Intel</h4>
                 <ul className="space-y-3">
-                  <li className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
-                    <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
-                    <span>Mode: Battle Royale (Squad)</span>
-                  </li>
-                  <li className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
-                    <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
-                    <span>Map: Bermuda / Alpine</span>
-                  </li>
-                  <li className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
-                    <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
-                    <span>Verification: In-game IDs must match registration data</span>
-                  </li>
+                  {currentTournament?.operationalIntel ? (
+                    currentTournament.operationalIntel.split('\n').filter(line => line.trim()).map((line, idx) => (
+                      <li key={idx} className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
+                        <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
+                        <span>{line.trim()}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
+                        <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
+                        <span>Mode: Battle Royale (Squad)</span>
+                      </li>
+                      <li className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
+                        <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
+                        <span>Map: Bermuda / Alpine</span>
+                      </li>
+                      <li className="flex items-start space-x-2 text-[10px] text-gray-400 font-bold">
+                        <CheckCircle className="w-3 h-3 text-cyan mt-0.5 shrink-0" />
+                        <span>Verification: In-game IDs must match registration data</span>
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

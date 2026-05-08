@@ -121,7 +121,8 @@ export default function Admin({ user }: AdminProps) {
     startTime: '',
     entryFee: '',
     platform: '',
-    prizePool: ''
+    prizePool: '',
+    operationalIntel: ''
   });
   const [isCreatingTournament, setIsCreatingTournament] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -505,7 +506,8 @@ export default function Admin({ user }: AdminProps) {
         startTime: selectedTournament.startTime || '',
         entryFee: selectedTournament.entryFee || '',
         platform: selectedTournament.platform || '',
-        prizePool: selectedTournament.prizePool || ''
+        prizePool: selectedTournament.prizePool || '',
+        operationalIntel: selectedTournament.operationalIntel || ''
       });
       setIsCreatingTournament(false);
     }
@@ -1509,7 +1511,8 @@ export default function Admin({ user }: AdminProps) {
                           startTime: t.startTime || '',
                           entryFee: t.entryFee || '',
                           platform: t.platform || '',
-                          prizePool: t.prizePool || ''
+                          prizePool: t.prizePool || '',
+                          operationalIntel: t.operationalIntel || ''
                         });
                       }}
                       className={`w-full text-left p-4 rounded-2xl border transition-all ${
@@ -1644,6 +1647,17 @@ export default function Admin({ user }: AdminProps) {
                           className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
                           value={tournamentForm.prizePool}
                           onChange={e => setTournamentForm({...tournamentForm, prizePool: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Operational Intel (Bullet points, one per line)</label>
+                        <textarea 
+                          placeholder="e.g. Mode: Battle Royale (Squad)
+Map: Bermuda / Alpine"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[120px] resize-y"
+                          value={tournamentForm.operationalIntel}
+                          onChange={e => setTournamentForm({...tournamentForm, operationalIntel: e.target.value})}
                         />
                       </div>
 

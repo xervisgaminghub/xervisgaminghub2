@@ -94,6 +94,7 @@
         "entryFee": { "type": "string" },
         "platform": { "type": "string" },
         "prizePool": { "type": "string" },
+        "operationalIntel": { "type": "string" },
         "registrationActive": { "type": "boolean" },
         "status": { "type": "string", "enum": ["upcoming", "active", "completed"] },
         "createdAt": { "type": "string", "format": "date-time" },

@@ -47,6 +47,7 @@ export interface Tournament {
   entryFee?: string;
   platform?: string;
   prizePool?: string;
+  operationalIntel?: string;
   registrationActive: boolean;
   status: 'upcoming' | 'active' | 'completed';
   createdAt: any;
