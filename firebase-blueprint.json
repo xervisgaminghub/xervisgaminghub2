@@ -68,16 +68,21 @@
         "tournamentId": { "type": "string" },
         "userId": { "type": "string" },
         "teamName": { "type": "string" },
-        "player1": { "type": "string" },
-        "player2": { "type": "string" },
-        "player3": { "type": "string" },
-        "player4": { "type": "string" },
+        "player1Name": { "type": "string" },
+        "player1UID": { "type": "string" },
+        "player2Name": { "type": "string" },
+        "player2UID": { "type": "string" },
+        "player3Name": { "type": "string" },
+        "player3UID": { "type": "string" },
+        "player4Name": { "type": "string" },
+        "player4UID": { "type": "string" },
         "phone": { "type": "string" },
+        "transactionId": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "approved", "denied"] },
         "denyReason": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["tournamentId", "userId", "teamName", "player1", "player2", "player3", "player4", "phone", "status", "createdAt"]
+      "required": ["tournamentId", "userId", "teamName", "player1Name", "player1UID", "phone", "status", "createdAt"]
     },
     "Tournament": {
       "title": "Tournament",
@@ -97,23 +102,15 @@
         "operationalIntel": { "type": "string" },
         "registrationActive": { "type": "boolean" },
         "status": { "type": "string", "enum": ["upcoming", "active", "completed"] },
+        "isPaid": { "type": "boolean" },
+        "entryFeeAmount": { "type": "number" },
+        "roomId": { "type": "string" },
+        "password": { "type": "string" },
+        "isIdPassLocked": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "status", "registrationActive", "updatedAt"]
-    },
-    "Announcement": {
-      "title": "Announcement",
-      "description": "Global internal announcements shown to users in the app",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "type": { "type": "string", "enum": ["info", "warning", "success", "event"] },
-        "active": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["title", "message", "type", "active", "createdAt"]
+      "required": ["title", "status", "registrationActive", "updatedAt", "isPaid", "isIdPassLocked"]
     }
   },
   "firestore": {
@@ -140,10 +137,6 @@
     "/tournaments/{tournamentId}": {
       "schema": "Tournament",
       "description": "Tournament metadata and winner info"
-    },
-    "/announcements/{announcementId}": {
-      "schema": "Announcement",
-      "description": "Global internal announcements"
     }
   }
 }

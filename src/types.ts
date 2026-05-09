@@ -50,6 +50,12 @@ export interface Tournament {
   operationalIntel?: string;
   registrationActive: boolean;
   status: 'upcoming' | 'active' | 'completed';
+  isPaid: boolean;
+  isOfficial: boolean;
+  entryFeeAmount?: number;
+  roomId?: string;
+  password?: string;
+  isIdPassLocked: boolean;
   createdAt: any;
   updatedAt: any;
 }
@@ -59,11 +65,16 @@ export interface TournamentRegistration {
   tournamentId: string;
   userId: string;
   teamName: string;
-  player1: string;
-  player2: string;
-  player3: string;
-  player4: string;
+  player1Name: string;
+  player1UID: string;
+  player2Name: string;
+  player2UID: string;
+  player3Name: string;
+  player3UID: string;
+  player4Name: string;
+  player4UID: string;
   phone: string;
+  transactionId?: string;
   status: 'pending' | 'approved' | 'denied';
   denyReason?: string;
   createdAt: string;

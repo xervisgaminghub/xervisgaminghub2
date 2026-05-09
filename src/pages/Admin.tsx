@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getRank } from '../lib/rankUtils';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp, addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight, Megaphone, Send, Info, AlertTriangle, Star } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight, Megaphone, Send, Info, AlertTriangle, Star, Settings } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
@@ -101,11 +101,10 @@ interface Announcement {
 
 export default function Admin({ user }: AdminProps) {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products' | 'announcements'>('analytics');
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products' | 'settings'>('analytics');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -122,7 +121,13 @@ export default function Admin({ user }: AdminProps) {
     entryFee: '',
     platform: '',
     prizePool: '',
-    operationalIntel: ''
+    operationalIntel: '',
+    isPaid: false,
+    isOfficial: false,
+    entryFeeAmount: 0,
+    roomId: '',
+    password: '',
+    isIdPassLocked: true
   });
   const [isCreatingTournament, setIsCreatingTournament] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -130,13 +135,9 @@ export default function Admin({ user }: AdminProps) {
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  // Announcement State
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  const [announcementForm, setAnnouncementForm] = useState({
-    title: '',
-    message: '',
-    type: 'info' as 'info' | 'warning' | 'success' | 'event',
-    active: true
+  // Settings State
+  const [globalSettings, setGlobalSettings] = useState({
+    scrollingText: ''
   });
 
   // Product Form State
@@ -161,59 +162,41 @@ export default function Admin({ user }: AdminProps) {
         fetchAnalytics();
       } else if (activeTab === 'products') {
         fetchProducts();
-      } else if (activeTab === 'announcements') {
-        fetchAnnouncements();
+      } else if (activeTab === 'settings') {
+        fetchSettings();
       } else {
         fetchData();
       }
     }
   }, [activeTab, isUnlocked]);
 
-  const fetchAnnouncements = async () => {
+  const fetchSettings = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      setAnnouncements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)));
+      const snap = await getDoc(doc(db, 'tournament_info', 'current'));
+      if (snap.exists()) {
+        setGlobalSettings({ scrollingText: snap.data().scrollingText || '' });
+      }
     } catch (error) {
-      console.error("Error fetching announcements:", error);
+      console.error("Error fetching settings:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveAnnouncement = async (e: React.FormEvent) => {
+  const saveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdating('announcement-save');
+    setIsUpdating('settings-save');
     try {
-      if (editingAnnouncement) {
-        await updateDoc(doc(db, 'announcements', editingAnnouncement.id), announcementForm);
-        toast.success("Announcement updated!");
-      } else {
-        await addDoc(collection(db, 'announcements'), {
-          ...announcementForm,
-          createdAt: serverTimestamp()
-        });
-        toast.success("Announcement broadcasted internally!");
-      }
-      setEditingAnnouncement(null);
-      setAnnouncementForm({ title: '', message: '', type: 'info', active: true });
-      fetchAnnouncements();
+      await setDoc(doc(db, 'tournament_info', 'current'), {
+        scrollingText: globalSettings.scrollingText,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      toast.success("Global settings updated!");
     } catch (error) {
-      handleFirestoreError(error, editingAnnouncement ? OperationType.UPDATE : OperationType.CREATE, 'announcements');
+      handleFirestoreError(error, OperationType.UPDATE, 'tournament_info/current');
     } finally {
       setIsUpdating(null);
-    }
-  };
-
-  const deleteAnnouncement = async (id: string) => {
-    if (!window.confirm("Delete this announcement?")) return;
-    try {
-      await deleteDoc(doc(db, 'announcements', id));
-      toast.success("Announcement deleted");
-      fetchAnnouncements();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `announcements/${id}`);
     }
   };
 
@@ -930,6 +913,56 @@ export default function Admin({ user }: AdminProps) {
     }
   };
 
+  const deleteUser = async (targetUserId: string, targetEmail: string) => {
+    if (user.email !== 'sajewel132@gmail.com') {
+      toast.error("Only the Main Admin can remove operatives.");
+      return;
+    }
+
+    if (targetEmail === 'sajewel132@gmail.com') {
+      toast.error("Main Admin cannot be terminated.");
+      return;
+    }
+
+    if (!window.confirm(`PERMANENT TERMINATION: Are you sure you want to remove user ${targetEmail} and all their associated data? This action cannot be reversed.`)) return;
+
+    setIsUpdating(targetUserId);
+    try {
+      // 1. Delete Orders
+      const qOrders = query(collection(db, 'orders'), where('userId', '==', targetUserId));
+      const ordersSnap = await getDocs(qOrders);
+      for (const d of ordersSnap.docs) await deleteDoc(doc(db, 'orders', d.id));
+
+      // 2. Delete Registrations
+      const qRegs = query(collection(db, 'tournamentRegistrations'), where('userId', '==', targetUserId));
+      const regsSnap = await getDocs(qRegs);
+      for (const d of regsSnap.docs) await deleteDoc(doc(db, 'tournamentRegistrations', d.id));
+
+      // 3. Delete Points History
+      const qPoints = query(collection(db, 'points'), where('userId', '==', targetUserId));
+      const pointsSnap = await getDocs(qPoints);
+      for (const d of pointsSnap.docs) await deleteDoc(doc(db, 'points', d.id));
+
+      // 4. Delete Referrals
+      const qRef1 = query(collection(db, 'referrals'), where('referrerId', '==', targetUserId));
+      const qRef2 = query(collection(db, 'referrals'), where('referredUserId', '==', targetUserId));
+      const ref1Snap = await getDocs(qRef1);
+      const ref2Snap = await getDocs(qRef2);
+      for (const d of ref1Snap.docs) await deleteDoc(doc(db, 'referrals', d.id));
+      for (const d of ref2Snap.docs) await deleteDoc(doc(db, 'referrals', d.id));
+
+      // 5. Delete User Profile
+      await deleteDoc(doc(db, 'users', targetUserId));
+
+      toast.success("Operative and all associated intel purged successfully.");
+      fetchData();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `users/${targetUserId}`);
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -1030,10 +1063,10 @@ export default function Admin({ user }: AdminProps) {
             Products
           </button>
           <button 
-            onClick={() => setActiveTab('announcements')}
-            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'announcements' ? 'bg-cyan text-dark' : 'text-gray-500 hover:text-white'}`}
+            onClick={() => setActiveTab('settings')}
+            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-cyan text-dark' : 'text-gray-500 hover:text-white'}`}
           >
-            Announcements
+            System
           </button>
         </div>
       </div>
@@ -1178,141 +1211,45 @@ export default function Admin({ user }: AdminProps) {
               ))}
             </div>
           </div>
-        ) : activeTab === 'announcements' ? (
+        ) : activeTab === 'settings' ? (
           <div className="p-8 lg:p-12 space-y-12">
             <div className="flex items-center space-x-3">
               <div className="p-3 bg-cyan/10 rounded-xl border border-cyan/20">
-                <Megaphone className="w-6 h-6 text-cyan" />
+                <Settings className="w-6 h-6 text-cyan" />
               </div>
               <div>
-                <h3 className="text-xl font-black uppercase italic">Internal <span className="text-cyan">Announcement System</span></h3>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Broadcast messages to all operative terminals</p>
+                <h3 className="text-xl font-black uppercase italic">System <span className="text-cyan">Configuration</span></h3>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Global platform parameters and alert system</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <form onSubmit={saveAnnouncement} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Type</label>
-                      <select 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
-                        value={announcementForm.type}
-                        onChange={e => setAnnouncementForm({...announcementForm, type: e.target.value as any})}
-                      >
-                        <option value="info">Information</option>
-                        <option value="warning">Alert / Warning</option>
-                        <option value="success">Achievement / Update</option>
-                        <option value="event">Tournament / Event</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Visibility</label>
-                      <select 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
-                        value={announcementForm.active ? 'true' : 'false'}
-                        onChange={e => setAnnouncementForm({...announcementForm, active: e.target.value === 'true'})}
-                      >
-                        <option value="true">ACTIVE / VISIBLE</option>
-                        <option value="false">HIDDEN / DRAFT</option>
-                      </select>
-                    </div>
+            <div className="max-w-2xl">
+              <form onSubmit={saveSettings} className="space-y-6 bg-white/[0.02] p-8 rounded-[2rem] border border-white/5">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 text-cyan mb-2">
+                    <Megaphone className="w-4 h-4" />
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em]">Global Alert Scroll Text</label>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Announcement Header</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="e.g. New Stock Arrived!"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
-                      value={announcementForm.title}
-                      onChange={e => setAnnouncementForm({...announcementForm, title: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Message Content</label>
-                    <textarea 
-                      required
-                      placeholder="Enter details..."
-                      className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[150px] resize-none"
-                      value={announcementForm.message}
-                      onChange={e => setAnnouncementForm({...announcementForm, message: e.target.value})}
-                    />
-                  </div>
+                  <textarea 
+                    placeholder="Enter the alert text to scroll on the homepage..."
+                    className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold min-h-[120px] resize-none"
+                    value={globalSettings.scrollingText}
+                    onChange={e => setGlobalSettings({...globalSettings, scrollingText: e.target.value})}
+                  />
+                  <p className="text-[8px] text-gray-500 uppercase font-bold tracking-widest mt-2 ml-1">
+                    * This text will be broadcasted to all operative terminals on the primary interface.
+                  </p>
                 </div>
 
-                <div className="flex gap-4">
-                  <button 
-                    type="submit" 
-                    disabled={isUpdating === 'announcement-save'}
-                    className="btn-cyan flex-grow py-4 flex items-center justify-center space-x-3 group"
-                  >
-                    <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                    <span className="font-black uppercase tracking-widest">{editingAnnouncement ? 'Update Broadcast' : 'Deploy Broadcast'}</span>
-                  </button>
-                  {editingAnnouncement && (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setEditingAnnouncement(null);
-                        setAnnouncementForm({ title: '', message: '', type: 'info', active: true });
-                      }}
-                      className="bg-white/5 px-6 rounded-xl border border-white/5 text-gray-500 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
+                <button 
+                  type="submit" 
+                  disabled={isUpdating === 'settings-save'}
+                  className="btn-cyan w-full py-4 flex items-center justify-center space-x-3 group"
+                >
+                  <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  <span className="font-black uppercase tracking-widest">Update System Parameters</span>
+                </button>
               </form>
-
-              <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
-                {announcements.map(a => (
-                  <div key={a.id} className={`glass p-6 rounded-3xl border-white/5 relative group transition-all hover:border-cyan/30 ${!a.active ? 'opacity-50 grayscale' : ''}`}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${
-                          a.type === 'warning' ? 'bg-red/10 text-red' :
-                          a.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
-                          a.type === 'event' ? 'bg-yellow-500/10 text-yellow-500' :
-                          'bg-cyan/10 text-cyan'
-                        }`}>
-                          {a.type === 'warning' ? <AlertTriangle className="w-4 h-4" /> :
-                           a.type === 'success' ? <CheckCircle className="w-4 h-4" /> :
-                           a.type === 'event' ? <Star className="w-4 h-4" /> :
-                           <Info className="w-4 h-4" />}
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-50">{a.type}</span>
-                      </div>
-                      <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => {
-                            setEditingAnnouncement(a);
-                            setAnnouncementForm({ title: a.title, message: a.message, type: a.type, active: a.active });
-                          }}
-                          className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"
-                        >
-                          <Edit className="w-3 h-3" />
-                        </button>
-                        <button 
-                          onClick={() => deleteAnnouncement(a.id)}
-                          className="p-2 hover:bg-red/20 rounded-lg text-gray-400 hover:text-red"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                    <h4 className="text-white font-black uppercase italic mb-2">{a.title}</h4>
-                    <p className="text-[10px] text-gray-500 font-bold leading-relaxed">{a.message}</p>
-                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                      <span className="text-[8px] font-black text-gray-700 uppercase tracking-widest">Released: {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleString() : 'Recent'}</span>
-                      {!a.active && <span className="text-[8px] font-black text-red uppercase tracking-widest italic">Draft / Hidden</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         ) : activeTab === 'users' ? (
@@ -1362,27 +1299,37 @@ export default function Admin({ user }: AdminProps) {
                          >
                            <Edit className="w-4 h-4" />
                          </button>
-                         <button 
-                           onClick={() => updateUserRole(u.uid, u.email, u.role)}
-                           disabled={isUpdating === u.uid || user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com'}
-                           className={`p-2 rounded-lg transition-colors ${
-                             u.role === 'admin' 
-                               ? 'text-red hover:bg-red/20' 
-                               : 'text-gray-400 hover:bg-white/10'
-                           } ${
-                             (user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
-                           }`}
-                           title={
-                             u.email === 'sajewel132@gmail.com' 
-                               ? "Permanent Admin" 
-                               : user.email !== 'sajewel132@gmail.com'
-                                 ? "Main Admin clearance required"
-                                 : u.role === 'admin' ? "Remove Admin" : "Make Admin"
-                           }
-                         >
-                           <Shield className="w-4 h-4" />
-                         </button>
-                       </div>
+                           <button 
+                            onClick={() => updateUserRole(u.uid, u.email, u.role)}
+                            disabled={isUpdating === u.uid || user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com'}
+                            className={`p-2 rounded-lg transition-colors ${
+                              u.role === 'admin' 
+                                ? 'text-red hover:bg-red/20' 
+                                : 'text-gray-400 hover:bg-white/10'
+                            } ${
+                              (user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            title={
+                              u.email === 'sajewel132@gmail.com' 
+                                ? "Permanent Admin" 
+                                : user.email !== 'sajewel132@gmail.com'
+                                  ? "Main Admin clearance required"
+                                  : u.role === 'admin' ? "Remove Admin" : "Make Admin"
+                            }
+                          >
+                            <Shield className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => deleteUser(u.uid, u.email)}
+                            disabled={isUpdating === u.uid || user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com'}
+                            className={`p-2 rounded-lg transition-colors text-red hover:bg-red/20 ${
+                              (user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            title="Delete User Data"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                      </td>
                    </tr>
                  ))}
@@ -1485,7 +1432,13 @@ export default function Admin({ user }: AdminProps) {
                         entryFee: 'FREE',
                         platform: 'Mobile',
                         prizePool: '100 Diamonds',
-                        operationalIntel: ''
+                        operationalIntel: '',
+                        isPaid: false,
+                        isOfficial: false,
+                        entryFeeAmount: 0,
+                        roomId: '',
+                        password: '',
+                        isIdPassLocked: true
                       });
                     }}
                     className="p-2 bg-cyan/10 text-cyan rounded-lg hover:bg-cyan hover:text-dark transition-all"
@@ -1513,7 +1466,13 @@ export default function Admin({ user }: AdminProps) {
                           entryFee: t.entryFee || '',
                           platform: t.platform || '',
                           prizePool: t.prizePool || '',
-                          operationalIntel: t.operationalIntel || ''
+                          operationalIntel: t.operationalIntel || '',
+                          isPaid: t.isPaid || false,
+                          isOfficial: t.isOfficial || false,
+                          entryFeeAmount: t.entryFeeAmount || 0,
+                          roomId: t.roomId || '',
+                          password: t.password || '',
+                          isIdPassLocked: t.isIdPassLocked ?? true
                         });
                       }}
                       className={`w-full text-left p-4 rounded-2xl border transition-all ${
@@ -1606,6 +1565,74 @@ Map: Bermuda / Alpine"
                           value={tournamentForm.operationalIntel}
                           onChange={e => setTournamentForm({...tournamentForm, operationalIntel: e.target.value})}
                         />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Classification</label>
+                          <select 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
+                            value={tournamentForm.isOfficial ? 'official' : 'community'}
+                            onChange={e => setTournamentForm({...tournamentForm, isOfficial: e.target.value === 'official'})}
+                          >
+                            <option value="community">COMMUNITY</option>
+                            <option value="official">OFFICIAL</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Type</label>
+                          <select 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
+                            value={tournamentForm.isPaid ? 'paid' : 'free'}
+                            onChange={e => setTournamentForm({...tournamentForm, isPaid: e.target.value === 'paid'})}
+                          >
+                            <option value="free">FREE</option>
+                            <option value="paid">PAID / ENTRY FEE</option>
+                          </select>
+                        </div>
+                        {tournamentForm.isPaid && (
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Fee Amount (BDT)</label>
+                            <input 
+                              type="number" 
+                              className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-bold"
+                              value={tournamentForm.entryFeeAmount}
+                              onChange={e => setTournamentForm({...tournamentForm, entryFeeAmount: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">ID & PASS ACCESS</label>
+                          <select 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-6 focus:border-cyan outline-none transition-all text-xs font-black uppercase"
+                            value={tournamentForm.isIdPassLocked ? 'locked' : 'unlocked'}
+                            onChange={e => setTournamentForm({...tournamentForm, isIdPassLocked: e.target.value === 'locked'})}
+                          >
+                            <option value="locked">LOCKED (ADMIN HIDDEN)</option>
+                            <option value="unlocked">UNLOCKED (VISIBLE TO APPROVED)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Room ID</label>
+                          <input 
+                            type="text" 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                            value={tournamentForm.roomId}
+                            onChange={e => setTournamentForm({...tournamentForm, roomId: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Room Password</label>
+                          <input 
+                            type="text" 
+                            className="w-full bg-black/40 border border-white/10 rounded-xl py-4 px-6 focus:border-cyan outline-none transition-all text-sm font-bold"
+                            value={tournamentForm.password}
+                            onChange={e => setTournamentForm({...tournamentForm, password: e.target.value})}
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1742,13 +1769,26 @@ Map: Bermuda / Alpine"
                                       {reg.status}
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                      Leader: <span className="text-white ml-2">{reg.player1}</span>
-                                    </p>
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                      Contact: <span className="text-cyan ml-2">{reg.phone}</span>
-                                    </p>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4 pt-4 border-t border-white/5">
+                                    <div className="space-y-1">
+                                      <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">SQUAD INTEL</p>
+                                      <p className="text-[10px] text-white font-bold ml-1">P1: {reg.player1Name} <span className="text-gray-500 text-[8px] ml-1">({reg.player1UID})</span></p>
+                                      <p className="text-[10px] text-white font-bold ml-1">P2: {reg.player2Name} <span className="text-gray-500 text-[8px] ml-1">({reg.player2UID})</span></p>
+                                      <p className="text-[10px] text-white font-bold ml-1">P3: {reg.player3Name} <span className="text-gray-500 text-[8px] ml-1">({reg.player3UID})</span></p>
+                                      <p className="text-[10px] text-white font-bold ml-1">P4: {reg.player4Name} <span className="text-gray-500 text-[8px] ml-1">({reg.player4UID})</span></p>
+                                    </div>
+                                    <div className="space-y-3">
+                                      <div>
+                                        <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">CONTACT INFOLINK</p>
+                                        <p className="text-xs text-cyan font-black ml-1">{reg.phone}</p>
+                                      </div>
+                                      {reg.transactionId && (
+                                        <div className="p-2 bg-cyan/10 rounded-lg border border-cyan/20">
+                                          <p className="text-[8px] font-black text-cyan uppercase tracking-widest">PAYMENT TRANSACTION ID</p>
+                                          <p className="text-[10px] text-white font-bold tracking-widest">{reg.transactionId}</p>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="flex items-center space-x-2">

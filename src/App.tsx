@@ -18,8 +18,6 @@ import Settings from './pages/Settings';
 // Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import WhatsAppButton from './components/layout/WhatsAppButton';
-import AnnouncementBanner from './components/layout/AnnouncementBanner';
 import DailySpin from './components/rewards/DailySpin';
 import LoadingScreen from './components/ui/LoadingScreen';
 import StarField from './components/ui/StarField';
@@ -73,7 +71,6 @@ function AppRoutes() {
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <StarField />
       <AdBlockDetector />
-      <AnnouncementBanner />
       {user && <DailySpin user={user} />}
       <Navbar user={user} />
       <main className="flex-grow">
@@ -99,7 +96,6 @@ function AppRoutes() {
         </Routes>
       </main>
       <Footer />
-      <WhatsAppButton />
       <Toaster position="top-center" richColors theme="dark" />
     </div>
   );
