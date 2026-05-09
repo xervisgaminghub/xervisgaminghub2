@@ -843,7 +843,8 @@ export default function Admin({ user }: AdminProps) {
   };
 
   const updateUserRole = async (targetUserId: string, targetEmail: string, currentRole: string | undefined) => {
-    if (user.email !== 'sajewel132@gmail.com') {
+    const isMainAdmin = user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com';
+    if (!isMainAdmin) {
       toast.error("Only the Main Admin can manage roles.");
       return;
     }
@@ -914,7 +915,8 @@ export default function Admin({ user }: AdminProps) {
   };
 
   const deleteUser = async (targetUserId: string, targetEmail: string) => {
-    if (user.email !== 'sajewel132@gmail.com') {
+    const isMainAdmin = user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com';
+    if (!isMainAdmin) {
       toast.error("Only the Main Admin can remove operatives.");
       return;
     }
@@ -1301,18 +1303,18 @@ export default function Admin({ user }: AdminProps) {
                          </button>
                            <button 
                             onClick={() => updateUserRole(u.uid, u.email, u.role)}
-                            disabled={isUpdating === u.uid || user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com'}
+                            disabled={isUpdating === u.uid || !(user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com') || u.email === 'sajewel132@gmail.com'}
                             className={`p-2 rounded-lg transition-colors ${
                               u.role === 'admin' 
                                 ? 'text-red hover:bg-red/20' 
                                 : 'text-gray-400 hover:bg-white/10'
                             } ${
-                              (user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
+                              (!(user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com') || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                             title={
                               u.email === 'sajewel132@gmail.com' 
                                 ? "Permanent Admin" 
-                                : user.email !== 'sajewel132@gmail.com'
+                                : !(user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com')
                                   ? "Main Admin clearance required"
                                   : u.role === 'admin' ? "Remove Admin" : "Make Admin"
                             }
@@ -1321,9 +1323,9 @@ export default function Admin({ user }: AdminProps) {
                           </button>
                           <button 
                             onClick={() => deleteUser(u.uid, u.email)}
-                            disabled={isUpdating === u.uid || user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com'}
+                            disabled={isUpdating === u.uid || !(user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com') || u.email === 'sajewel132@gmail.com'}
                             className={`p-2 rounded-lg transition-colors text-red hover:bg-red/20 ${
-                              (user.email !== 'sajewel132@gmail.com' || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
+                              (!(user.email === 'sajewel132@gmail.com' || user.email === 'mdmasumofficial7@gmail.com') || u.email === 'sajewel132@gmail.com') ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                             title="Delete User Data"
                           >

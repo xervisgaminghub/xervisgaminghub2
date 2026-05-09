@@ -115,7 +115,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
       allow create: if isAuthenticated() && isValidOrder(request.resource.data);
       allow update: if isAdmin();
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /transactions/{transactionId} {
@@ -126,14 +126,15 @@ service cloud.firestore {
 
     match /points/{transactionId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
-      // In a real app, only a cloud function should write this. 
-      // For this demo, we'll allow create if authenticated, but it's a risk.
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /referrals/{referralId} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow write: if false;
+      allow delete: if isAdmin();
     }
 
     match /tournamentRegistrations/{registrationId} {
@@ -141,7 +142,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() && 
                     request.resource.data.userId == request.auth.uid &&
                     request.resource.data.status == 'pending' &&
-                    request.resource.data.keys().hasAll(['tournamentId', 'userId', 'teamName', 'player1', 'player2', 'player3', 'player4', 'phone', 'status', 'createdAt']);
+                    request.resource.data.keys().hasAll(['tournamentId', 'userId', 'teamName', 'player1Name', 'player1UID', 'player2Name', 'player2UID', 'player3Name', 'player3UID', 'player4Name', 'player4UID', 'phone', 'status', 'createdAt']);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
