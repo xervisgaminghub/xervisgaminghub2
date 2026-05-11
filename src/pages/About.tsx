@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Info, Shield, Github, Twitter, Mail } from 'lucide-react';
+import { Info, Shield } from 'lucide-react';
 
 export default function About() {
   return (
@@ -24,7 +24,7 @@ export default function About() {
             className="glass p-8 rounded-3xl border-cyan/20"
           >
             <div className="w-12 h-12 bg-cyan/10 rounded-xl flex items-center justify-center mb-6">
-              <Info className="text-cyan w-6 h-6" />
+              <span className="text-cyan w-6 h-6"><Info className="w-6 h-6" /></span>
             </div>
             <h3 className="text-2xl font-bold mb-4">OUR MISSION</h3>
             <p className="text-gray-400 leading-relaxed">
@@ -39,7 +39,7 @@ export default function About() {
             className="glass p-8 rounded-3xl border-red/20"
           >
             <div className="w-12 h-12 bg-red/10 rounded-xl flex items-center justify-center mb-6">
-              <Shield className="text-red w-6 h-6" />
+              <span className="text-red w-6 h-6"><Shield className="w-6 h-6" /></span>
             </div>
             <h3 className="text-2xl font-bold mb-4">FAIR PLAY</h3>
             <p className="text-gray-400 leading-relaxed">
@@ -47,29 +47,6 @@ export default function About() {
             </p>
           </motion.div>
         </div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-16 glass p-8 rounded-3xl border-white/10 text-center"
-        >
-          <h3 className="text-2xl font-bold mb-8 uppercase tracking-widest">Connect with Us</h3>
-          <div className="flex flex-wrap justify-center gap-6">
-            <a href="#" className="flex items-center space-x-2 text-gray-400 hover:text-cyan transition-colors">
-              <Twitter className="w-5 h-5" />
-              <span>Twitter</span>
-            </a>
-            <a href="#" className="flex items-center space-x-2 text-gray-400 hover:text-cyan transition-colors">
-              <Github className="w-5 h-5" />
-              <span>GitHub</span>
-            </a>
-            <a href="#" className="flex items-center space-x-2 text-gray-400 hover:text-cyan transition-colors">
-              <Mail className="w-5 h-5" />
-              <span>Email</span>
-            </a>
-          </div>
-        </motion.div>
       </div>
     </div>
   );
