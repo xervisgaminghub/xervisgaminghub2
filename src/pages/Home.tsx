@@ -24,7 +24,7 @@ const HUB_LINKS = [
 
 export default function Home({ user }: HomeProps) {
   const [stats, setStats] = useState({ purchases: 0 });
-  const [scrollingText, setScrollingText] = useState('🔥 Welcome to Xervis Gaming Hub 🎮 | Play • Earn • Redeem 💰 | 💎 Free Fire Diamond Top-Up Available Now ⚡ | 🎁 Watch Ads & Unlock Free Downloads | 🏆 Level Up System Active – Reach Diamond & Crown 👑 | 💸 10 Points = 1 BDT | 🎯 Daily Earning সুযোগ চলছে | 🚨 AdBlock বন্ধ না করলে Download Unlock হবে না ❌ | 🎮 Mini Games খেলুন এবং প্রতি মিনিটে Point Earn করুন | 📡 Live Tournament Updates Coming Soon | 🚀 Join Now & Start Earning Today!');
+  const [scrollingText, setScrollingText] = useState('🏆 Welcome to FIFA World Cup Arena 2026 ⚽ | Compete • Win • Rise 👑 | 💎 Free Fire & Sports Top-Up Active ⚡ | 🎁 Complete Challenges & Unlock Daily Rewards | 🏅 World Cup Rank System Ready - Scale the Leaderboard | 💸 10 Points = 1 BDT | 🎯 Start registering in tournament fixtures today!');
 
   const { nextRank, pointsNeeded, progress: xpPercentage } = getPointsToNextRank(user?.points || 0);
 
@@ -70,12 +70,12 @@ export default function Home({ user }: HomeProps) {
           <div className="h-[300px] rounded-3xl border border-white/5 relative overflow-hidden flex items-end p-8 group shadow-[0_0_50px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-0 z-0">
               <img 
-                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1000" 
-                alt="Gaming Hero" 
-                className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 grayscale group-hover:grayscale-0 select-none"
+                src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1000" 
+                alt="World Cup Arena Hero" 
+                className="w-full h-full object-cover opacity-45 group-hover:scale-105 transition-transform duration-1000 select-none"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#010204]/60 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0e031c] via-[#0e031c]/50 to-transparent"></div>
             </div>
             
             <div className="relative z-10">
@@ -83,11 +83,11 @@ export default function Home({ user }: HomeProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <h1 className="text-5xl font-black leading-none mb-2 tracking-tighter drop-shadow-[0_0_20px_rgba(0,229,255,0.4)]">XERVIS <span className="text-cyan">ELITE</span></h1>
-                <p className="text-gray-400 mb-6 max-w-md font-bold uppercase text-[10px] tracking-widest leading-relaxed">High-performance resource node activated. Terminal synchronized for competitive integration and rapid deployment.</p>
+                <h1 className="text-5xl font-black leading-none mb-2 tracking-tighter drop-shadow-[0_0_20px_rgba(0,255,102,0.4)]">WORLD CUP <span className="text-cyan">ARENA 2026</span></h1>
+                <p className="text-gray-300 mb-6 max-w-md font-bold uppercase text-[10px] tracking-widest leading-relaxed">The premier tournament arena for the FIFA World Cup 2026. Compete, accumulate points, and procure exclusive items.</p>
                 <div className="flex gap-4">
-                  <Link to="/store" className="bg-cyan/80 backdrop-blur-md text-dark px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(0,229,255,0.4)] hover:bg-cyan hover:scale-105 transition-all">Procure Assets</Link>
-                  <Link to="/tournament" className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">Elite Events</Link>
+                  <Link to="/store" className="bg-cyan/80 backdrop-blur-md text-dark px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(0,255,102,0.4)] hover:bg-cyan hover:scale-105 transition-all">Explore Store</Link>
+                  <Link to="/tournament" className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">Fixtures & Entry</Link>
                 </div>
               </motion.div>
             </div>
@@ -109,18 +109,18 @@ export default function Home({ user }: HomeProps) {
         <div className="flex flex-col gap-6">
           <div className="stat-panel bg-black/40 h-full flex flex-col justify-between">
             <div>
-              <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-6">User Telemetry</h4>
+              <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.4em] mb-6">Squad Stats</h4>
               <div className="grid grid-cols-1 gap-4">
-                <StatBox value={user ? stats.purchases.toString() : "0"} label="Orders" />
-                <StatBox value={user ? `৳${Math.floor(user.points / 10)}` : "৳0"} label="Credit" />
-                <StatBox value={user ? user.level : "--"} label="Rank" />
+                <StatBox value={user ? stats.purchases.toString() : "0"} label="My Purchases" />
+                <StatBox value={user ? `৳${Math.floor(user.points / 10)}` : "৳0"} label="Token Balance" />
+                <StatBox value={user ? user.level : "--"} label="World Cup Rank" />
               </div>
             </div>
             
             <div className="mt-8 pt-6 border-t border-white/5">
               <div className="flex justify-between text-[10px] mb-2 font-black uppercase tracking-widest">
-                <span className="text-cyan">Progression Matrix</span>
-                <span className="text-gray-500">{user ? (nextRank ? `${pointsNeeded} to ${nextRank}` : 'MAX LEVEL') : 'OPERATIVE OFFLINE'}</span>
+                <span className="text-cyan">Championship Progression</span>
+                <span className="text-gray-500">{user ? (nextRank ? `${pointsNeeded} to ${nextRank}` : 'MAX RANK') : 'PLAYER DE-ACTIVATED'}</span>
               </div>
               <div className="h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
                 <motion.div 
@@ -143,7 +143,7 @@ export default function Home({ user }: HomeProps) {
       {/* Navigation Matrix Header */}
       <div className="flex items-center space-x-4 mb-6">
         <div className="h-[2px] flex-grow bg-gradient-to-r from-cyan/50 to-transparent" />
-        <h2 className="text-xl font-black uppercase tracking-[0.5em] text-white">Command <span className="text-cyan">Matrix</span></h2>
+        <h2 className="text-xl font-black uppercase tracking-[0.5em] text-white">WORLD CUP <span className="text-cyan">MATRIX</span></h2>
         <div className="h-[2px] flex-grow bg-gradient-to-l from-cyan/50 to-transparent" />
       </div>
 
@@ -159,23 +159,23 @@ export default function Home({ user }: HomeProps) {
         <div className="lg:col-span-2">
           {/* Info section or placeholder if needed */}
           <div className="stat-panel border-white/5 bg-white/[0.02] h-full flex flex-col justify-center">
-            <h3 className="text-sm font-black uppercase tracking-widest mb-4">Galactic Objective</h3>
+            <h3 className="text-sm font-black uppercase tracking-widest mb-4">Championship Mission</h3>
             <p className="text-xs text-gray-500 leading-relaxed uppercase font-bold tracking-wider">
-              Xervis Hub serves as the primary interface for resource acquisition and esports coordination within the star sector. 
-              Our mission is to provide seamless digital delivery and competitive infrastructure for all registered star-operatives. 
-              Always ensure your terminal remains updated with the latest cosmic security protocols.
+              Xervis Arena functions as the premier platform for soccer tournament organization and FIFA World Cup 2026 celebrations. 
+              Our mission is to deliver professional competitive frameworks, fair play standards, and immediate rewards access for all players. 
+              Always ensure your profile remains registered with the latest tournament guidelines.
             </p>
           </div>
         </div>
 
         <div className="stat-panel border-white/5 bg-white/[0.02]">
-          <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Network Connectivity</h4>
+          <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Grand Arena Connectivity</h4>
           <div className="space-y-3">
             <SocialEntry icon={Youtube} label="YouTube" sub="Subscribers & Streams" color="text-red" url="https://youtube.com/@xarvis-live" />
             <SocialEntry icon={Send} label="Telegram Hub" sub="Daily Codes & Updates" color="text-blue-400" url="https://t.me/xarvis2" />
           </div>
           <p className="mt-8 text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em] leading-relaxed">
-            Authorized Personnel Only. Xervis Hub Protocol v1.0.4 - All Data Encrypted.
+            FIFA 2026 Tournament Sync Protocol v2.0 - Fair Play Secured.
           </p>
         </div>
       </div>

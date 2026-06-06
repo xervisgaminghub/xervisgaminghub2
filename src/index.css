@@ -2,13 +2,13 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --color-cyan: #00E5FF;
-  --color-red: #FF3B3F;
-  --color-dark: #010204;
-  --color-deep: #05070a;
-  --color-cosmic: #0a0a1a;
-  --color-glass: rgba(1, 2, 4, 0.82);
-  --color-glass-border: rgba(0, 229, 255, 0.15);
+  --color-cyan: #00FF55;
+  --color-red: #FFD700;
+  --color-dark: #03170a;
+  --color-deep: #010804;
+  --color-cosmic: #062912;
+  --color-glass: rgba(3, 23, 10, 0.78);
+  --color-glass-border: rgba(0, 255, 85, 0.18);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   @keyframes shake {
@@ -34,10 +34,14 @@
 @layer base {
   body {
     @apply text-white font-sans selection:bg-cyan selection:text-dark;
-    background-color: #010204;
+    background-color: #03170a;
     background-image: 
-      radial-gradient(circle at 50% 0%, #0a0a25 0%, transparent 40%),
-      linear-gradient(to bottom, #010204, #05070a);
+      radial-gradient(circle at 50% 0%, rgba(6, 41, 18, 0.75) 0%, rgba(3, 23, 10, 0.96) 50%, #010804 100%),
+      url("https://images.unsplash.com/photo-1540747737956-378724044492?auto=format&fit=crop&q=80&w=2000");
+    background-size: cover;
+    background-position: center 20%;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     min-height: 100vh;
     overflow-x: hidden;
   }

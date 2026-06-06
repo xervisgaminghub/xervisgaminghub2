@@ -10,9 +10,9 @@ export default function About() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
         >
-          <h1 className="text-5xl md:text-7xl font-black mb-6 neon-text">ABOUT XERVIS HUB</h1>
+          <h1 className="text-5xl md:text-7xl font-black mb-6 neon-text">ABOUT THE ARENA</h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            The ultimate ecosystem for competitive gamers. Join tournaments, earn rewards, and level up your gaming legacy.
+            The ultimate ecosystem for FIFA World Cup 2026 fans and gamers. Join custom tournaments, track matches, earn premium items, and celebrate your football glory.
           </p>
         </motion.div>
 
@@ -26,9 +26,9 @@ export default function About() {
             <div className="w-12 h-12 bg-cyan/10 rounded-xl flex items-center justify-center mb-6">
               <span className="text-cyan w-6 h-6"><Info className="w-6 h-6" /></span>
             </div>
-            <h3 className="text-2xl font-bold mb-4">OUR MISSION</h3>
+            <h3 className="text-2xl font-bold mb-4">OUR CHAMPIONSHIP MISSION</h3>
             <p className="text-gray-400 leading-relaxed">
-              We started Xervis Hub with one simple goal: to bridge the gap between casual gaming and professional esports. We provide a platform where skill is rewarded and community comes first.
+              We established Xervis Arena with a clear vision: to combine digital gaming and professional live esports under the historic FIFA World Cup 2026 theme. We provide a space where talent is recognized and premium community events are hosted safely.
             </p>
           </motion.div>
 
@@ -41,9 +41,9 @@ export default function About() {
             <div className="w-12 h-12 bg-red/10 rounded-xl flex items-center justify-center mb-6">
               <span className="text-red w-6 h-6"><Shield className="w-6 h-6" /></span>
             </div>
-            <h3 className="text-2xl font-bold mb-4">FAIR PLAY</h3>
+            <h3 className="text-2xl font-bold mb-4">STADIUM ETHICS & FAIR PLAY</h3>
             <p className="text-gray-400 leading-relaxed">
-              Security and integrity are our top priorities. Our advanced anti-cheat systems and manual moderation ensure that every tournament and reward is earned fairly.
+              Uncompromising integrity and game safety are our primary pillars. Our specialized anti-cheat measures, bracket auditing, and active referees ensure that every goal, point, and prize is earned fairly on the pitch.
             </p>
           </motion.div>
         </div>
