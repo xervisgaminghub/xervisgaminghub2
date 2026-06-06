@@ -70,12 +70,12 @@ export default function Home({ user }: HomeProps) {
           <div className="h-[300px] rounded-3xl border border-white/5 relative overflow-hidden flex items-end p-8 group shadow-[0_0_50px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-0 z-0">
               <img 
-                src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1000" 
+                src="https://i.postimg.cc/8CW1VW4Y/vecteezy-ai-generated-a-large-field-at-the-stadium-with-the-light-36730736.jpg" 
                 alt="World Cup Arena Hero" 
                 className="w-full h-full object-cover opacity-45 group-hover:scale-105 transition-transform duration-1000 select-none"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0e031c] via-[#0e031c]/50 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#03170a] via-[#03170a]/50 to-transparent"></div>
             </div>
             
             <div className="relative z-10">

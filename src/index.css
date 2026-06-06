@@ -35,13 +35,6 @@
   body {
     @apply text-white font-sans selection:bg-cyan selection:text-dark;
     background-color: #03170a;
-    background-image: 
-      radial-gradient(circle at 50% 0%, rgba(6, 41, 18, 0.75) 0%, rgba(3, 23, 10, 0.96) 50%, #010804 100%),
-      url("https://images.unsplash.com/photo-1540747737956-378724044492?auto=format&fit=crop&q=80&w=2000");
-    background-size: cover;
-    background-position: center 20%;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
     min-height: 100vh;
     overflow-x: hidden;
   }

@@ -68,7 +68,12 @@ function AppRoutes() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div 
+      className="min-h-screen flex flex-col relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: 'linear-gradient(to bottom, rgba(3, 23, 10, 0.72) 0%, rgba(1, 8, 4, 0.96) 100%), url("https://i.postimg.cc/8CW1VW4Y/vecteezy-ai-generated-a-large-field-at-the-stadium-with-the-light-36730736.jpg")'
+      }}
+    >
       <StarField />
       <AdBlockDetector />
       {user && <DailySpin user={user} />}
