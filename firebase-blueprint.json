@@ -111,6 +111,45 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "status", "registrationActive", "updatedAt", "isPaid", "isIdPassLocked"]
+    },
+    "EsportsTeam": {
+      "title": "EsportsTeam",
+      "description": "An esports team recruiting members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "recruitmentOpen": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "recruitmentOpen"]
+    },
+    "TeamApplication": {
+      "title": "TeamApplication",
+      "description": "An application submitted by a player to join an esports team",
+      "type": "object",
+      "properties": {
+        "teamId": { "type": "string" },
+        "teamName": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "name": { "type": "string" },
+        "inGameName": { "type": "string" },
+        "uid": { "type": "string" },
+        "idLevel": { "type": "string" },
+        "preferredRole": { "type": "string" },
+        "whatsAppNumber": { "type": "string" },
+        "previousExperience": { "type": "string" },
+        "prevTeamName": { "type": "string" },
+        "prevRole": { "type": "string" },
+        "prevPlayDuration": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "hold", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teamId", "teamName", "userId", "name", "inGameName", "uid", "idLevel", "preferredRole", "whatsAppNumber", "previousExperience", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -137,6 +176,14 @@
     "/tournaments/{tournamentId}": {
       "schema": "Tournament",
       "description": "Tournament metadata and winner info"
+    },
+    "/esportsTeams/{teamId}": {
+      "schema": "EsportsTeam",
+      "description": "Esports teams and recruitment options"
+    },
+    "/teamApplications/{applicationId}": {
+      "schema": "TeamApplication",
+      "description": "Esports team join applications from users"
     }
   }
 }

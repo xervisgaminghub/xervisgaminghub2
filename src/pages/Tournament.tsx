@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield, Star, Megaphone, FileText, Lock, MessageSquare, DollarSign } from 'lucide-react';
+import { Trophy, Play, Calendar, Users, MapPin, ExternalLink, X, CheckCircle, Clock, Shield, Star, Megaphone, FileText, Lock, MessageSquare, DollarSign, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { UserProfile, Tournament as TournamentType, TournamentRegistration } from '../types';

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { UserProfile, Order, TournamentRegistration, Tournament } from '../types';
+import { UserProfile, Order, TournamentRegistration, Tournament, EsportsTeam, TeamApplication } from '../types';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { getRank } from '../lib/rankUtils';
 import { collection, query, getDocs, doc, updateDoc, orderBy, limit, where, deleteDoc, getDoc, setDoc, serverTimestamp, addDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight, Megaphone, Send, Info, AlertTriangle, Star, Settings } from 'lucide-react';
+import { Users, ShoppingBag, Search, Shield, Zap, Trophy, Trash2, Edit, CheckCircle, Clock, Lock, Flag, XCircle, UserCheck, UserX, BarChart3, TrendingUp, PieChart, Activity, DollarSign, ArrowUpRight, ArrowDownRight, Megaphone, Send, Info, AlertTriangle, Star, Settings, Plus, Clipboard as ClipboardIcon } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend
@@ -101,8 +101,12 @@ interface Announcement {
 
 export default function Admin({ user }: AdminProps) {
   const { isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products' | 'settings'>('analytics');
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'tournament' | 'analytics' | 'products' | 'settings' | 'recruitment'>('analytics');
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [esportsTeams, setEsportsTeams] = useState<EsportsTeam[]>([]);
+  const [teamApplications, setTeamApplications] = useState<TeamApplication[]>([]);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamDescription, setNewTeamDescription] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
@@ -164,11 +168,113 @@ export default function Admin({ user }: AdminProps) {
         fetchProducts();
       } else if (activeTab === 'settings') {
         fetchSettings();
+      } else if (activeTab === 'recruitment') {
+        fetchRecruitmentData();
       } else {
         fetchData();
       }
     }
   }, [activeTab, isUnlocked]);
+
+  const fetchRecruitmentData = async () => {
+    setLoading(true);
+    try {
+      const teamsQuery = query(collection(db, 'esportsTeams'), orderBy('createdAt', 'desc'));
+      const teamsSnap = await getDocs(teamsQuery);
+      setEsportsTeams(teamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as EsportsTeam)));
+
+      const appsQuery = query(collection(db, 'teamApplications'), orderBy('createdAt', 'desc'));
+      const appsSnap = await getDocs(appsQuery);
+      setTeamApplications(appsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamApplication)));
+    } catch (error) {
+      console.error("Error fetching recruitment data:", error);
+      toast.error("Failed to fetch recruitment data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createEsportsTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+    setIsUpdating('create-team');
+    try {
+      await addDoc(collection(db, 'esportsTeams'), {
+        name: newTeamName,
+        description: newTeamDescription,
+        recruitmentOpen: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      setNewTeamName('');
+      setNewTeamDescription('');
+      toast.success("New esports team added with recruitment opened!");
+      fetchRecruitmentData();
+    } catch (error) {
+      console.error("Error creating team:", error);
+      toast.error("Failed to create esports team");
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const toggleTeamRecruitment = async (teamId: string, currentOpen: boolean) => {
+    setIsUpdating(teamId);
+    try {
+      await updateDoc(doc(db, 'esportsTeams', teamId), {
+        recruitmentOpen: !currentOpen,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(`Recruitment ${!currentOpen ? "Opened" : "Closed"} successfully`);
+      fetchRecruitmentData();
+    } catch (error) {
+      console.error("Error toggling recruitment:", error);
+      toast.error("Failed to toggle recruitment status");
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const deleteEsportsTeam = async (teamId: string) => {
+    if (!window.confirm("Delete this esports team? Existing applications will not be deleted.")) return;
+    try {
+      await deleteDoc(doc(db, 'esportsTeams', teamId));
+      toast.success("Esports team deleted successfully");
+      fetchRecruitmentData();
+    } catch (error) {
+      console.error("Error deleting team:", error);
+      toast.error("Failed to delete team");
+    }
+  };
+
+  const updateApplicationStatus = async (appId: string, status: 'approved' | 'hold' | 'rejected') => {
+    setIsUpdating(appId);
+    try {
+      await updateDoc(doc(db, 'teamApplications', appId), {
+        status,
+        updatedAt: serverTimestamp()
+      });
+      toast.success(`Application status updated to: ${status}`);
+      fetchRecruitmentData();
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      toast.error("Failed to update status");
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const deleteTeamApplication = async (appId: string) => {
+    if (!window.confirm("Permanently delete this application record?")) return;
+    try {
+      await deleteDoc(doc(db, 'teamApplications', appId));
+      toast.success("Application record deleted");
+      fetchRecruitmentData();
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      toast.error("Failed to delete application");
+    }
+  };
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -490,7 +596,13 @@ export default function Admin({ user }: AdminProps) {
         entryFee: selectedTournament.entryFee || '',
         platform: selectedTournament.platform || '',
         prizePool: selectedTournament.prizePool || '',
-        operationalIntel: selectedTournament.operationalIntel || ''
+        operationalIntel: selectedTournament.operationalIntel || '',
+        isPaid: selectedTournament.isPaid ?? false,
+        isOfficial: selectedTournament.isOfficial ?? false,
+        entryFeeAmount: selectedTournament.entryFeeAmount ?? 0,
+        roomId: selectedTournament.roomId || '',
+        password: selectedTournament.password || '',
+        isIdPassLocked: selectedTournament.isIdPassLocked ?? true
       });
       setIsCreatingTournament(false);
     }
@@ -809,6 +921,209 @@ export default function Admin({ user }: AdminProps) {
     );
   };
 
+  const renderRecruitmentAdmin = () => {
+    return (
+      <div className="p-8 space-y-12 text-left">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Create & Manage Teams */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
+              <h4 className="text-sm font-black uppercase tracking-widest text-cyan pb-2 border-b border-white/5">
+                Create Esports Team
+              </h4>
+              <form onSubmit={createEsportsTeam} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Team Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. ALPHA RIPTIDE"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3 px-4 focus:border-cyan outline-none text-white text-xs"
+                    value={newTeamName}
+                    onChange={e => setNewTeamName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Team Description</label>
+                  <textarea
+                    placeholder="e.g. Main competitive Battle Royale squad seeking players above Level 70"
+                    rows={3}
+                    className="w-full bg-black/40 border border-white/5 rounded-xl py-3 px-4 focus:border-cyan outline-none text-white text-xs resize-none"
+                    value={newTeamDescription}
+                    onChange={e => setNewTeamDescription(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isUpdating === 'create-team'}
+                  className="w-full py-3 bg-cyan text-dark hover:bg-cyan/90 font-black uppercase text-xs tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(0,255,85,0.25)] flex items-center justify-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Team</span>
+                </button>
+              </form>
+            </div>
+
+            {/* Teams Roster List */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 ml-1">
+                Active Esports Squads ({esportsTeams.length})
+              </h4>
+              <div className="space-y-3">
+                {esportsTeams.length === 0 ? (
+                  <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center py-6">No teams created. Deploy Alpha Team above.</p>
+                ) : (
+                  esportsTeams.map(team => (
+                    <div key={team.id} className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-3 relative">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h5 className="font-bold text-sm text-white">{team.name}</h5>
+                          <p className="text-[9px] text-gray-400 max-w-[180px] break-words">{team.description}</p>
+                        </div>
+                        <button
+                          onClick={() => deleteEsportsTeam(team.id!)}
+                          className="p-1.5 hover:bg-red/20 text-red rounded-lg transition-colors absolute right-2 top-2"
+                          title="Delete Esports Team"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                          team.recruitmentOpen ? 'bg-green-500/15 text-green-500' : 'bg-red/15 text-red'
+                        }`}>
+                          Recruitment {team.recruitmentOpen ? "Open" : "Closed"}
+                        </span>
+                        <button
+                          onClick={() => toggleTeamRecruitment(team.id!, team.recruitmentOpen)}
+                          className="text-[9px] font-black uppercase tracking-widest text-cyan hover:underline transition-all"
+                        >
+                          {team.recruitmentOpen ? "Close Recruitment" : "Open Recruitment"}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Applications View Table / List */}
+          <div className="lg:col-span-2 space-y-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-pink-500 pb-2 border-b border-white/5 flex items-center space-x-2">
+              <ClipboardIcon className="w-4 h-4" />
+              <span>Esports Recruitment Logs ({teamApplications.length})</span>
+            </h4>
+
+            {teamApplications.length === 0 ? (
+              <div className="glass p-12 text-center rounded-3xl border-white/5">
+                <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                <p className="text-xs uppercase text-gray-500 font-bold tracking-wider">No Applications Logged Yet</p>
+                <p className="text-[9px] uppercase text-gray-600 tracking-widest mt-1">Open recruitment programs and invite users to register</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {teamApplications.map(app => (
+                  <div key={app.id} className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4 relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[10px] font-black text-cyan uppercase tracking-widest">{app.teamName} Application</span>
+                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                            app.status === 'approved' ? 'bg-green-500/10 border-green-500/25 text-green-500' :
+                            app.status === 'rejected' ? 'bg-red/10 border-red/21 text-red' :
+                            app.status === 'hold' ? 'bg-yellow-500/10 border-yellow-500/21 text-yellow-500' :
+                            'bg-cyan/10 border-cyan/21 text-cyan animate-pulse'
+                          }`}>
+                            {app.status}
+                          </span>
+                        </div>
+                        <h4 className="text-lg font-black text-white italic uppercase mt-1">{app.inGameName}</h4>
+                        <p className="text-[10px] text-gray-400 font-mono">Real Name: {app.name} • Email: {app.userEmail}</p>
+                      </div>
+
+                      {/* Management Action Buttons */}
+                      <div className="flex items-center space-x-2">
+                        {app.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => updateApplicationStatus(app.id!, 'approved')}
+                              className="px-3 py-1.5 bg-green-500/10 hover:bg-green-500 border border-green-500/20 hover:text-dark text-green-500 font-black uppercase text-[9px] tracking-widest rounded-lg transition-all border-green-500"
+                              title="Approve Application"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateApplicationStatus(app.id!, 'hold')}
+                              className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500 border border-yellow-500/20 hover:text-dark text-yellow-500 font-black uppercase text-[9px] tracking-widest rounded-lg transition-all border-yellow-500"
+                              title="Hold Application"
+                            >
+                              Hold
+                            </button>
+                            <button
+                              onClick={() => updateApplicationStatus(app.id!, 'rejected')}
+                              className="px-3 py-1.5 bg-red/10 hover:bg-red border border-red/20 hover:text-dark text-red font-black uppercase text-[9px] tracking-widest rounded-lg transition-all border-red"
+                              title="Reject Application"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {app.status !== 'pending' && (
+                          <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Reviewed</span>
+                        )}
+                        <button
+                          onClick={() => deleteTeamApplication(app.id!)}
+                          className="p-2 hover:bg-red/20 text-red rounded-lg transition-colors ml-2"
+                          title="Purge Application"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-black/30 p-4 rounded-2xl text-[10px] text-gray-400 font-mono">
+                      <div>
+                        <p className="text-[8px] text-gray-500 font-black uppercase mb-0.5">Gaming UID</p>
+                        <p className="text-white font-bold">{app.uid}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-gray-500 font-black uppercase mb-0.5">Game Level</p>
+                        <p className="text-white font-bold">{app.idLevel}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-gray-500 font-black uppercase mb-0.5">Preferred Role</p>
+                        <p className="text-cyan font-bold">{app.preferredRole}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-gray-500 font-black uppercase mb-0.5">WhatsApp Number</p>
+                        <p className="text-white font-bold">{app.whatsAppNumber}</p>
+                      </div>
+                    </div>
+
+                    {app.previousExperience === 'Yes' ? (
+                      <div className="bg-cyan/5 border border-cyan/10 rounded-2xl p-4 text-[10px]">
+                        <p className="text-[8px] text-cyan font-black uppercase tracking-widest mb-1.5">Previous Roster Profile</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-gray-400">
+                          <p>Team: <span className="text-white font-bold">{app.prevTeamName}</span></p>
+                          <p>Role: <span className="text-white font-bold">{app.prevRole}</span></p>
+                          <p>Stay: <span className="text-white font-bold">{app.prevPlayDuration}</span></p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest italic ml-1">No prior esports organization experience.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     if (passcode === '1357') {
@@ -1070,10 +1385,16 @@ export default function Admin({ user }: AdminProps) {
           >
             System
           </button>
+          <button 
+            onClick={() => setActiveTab('recruitment')}
+            className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'recruitment' ? 'bg-cyan text-dark' : 'text-gray-500 hover:text-white'}`}
+          >
+            Recruitment
+          </button>
         </div>
       </div>
 
-      {activeTab !== 'tournament' && activeTab !== 'analytics' && (
+      {activeTab !== 'tournament' && activeTab !== 'analytics' && activeTab !== 'recruitment' && (
         <div className="mb-8 flex gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -1106,6 +1427,8 @@ export default function Admin({ user }: AdminProps) {
           </div>
         ) : activeTab === 'analytics' ? (
           renderAnalytics()
+        ) : activeTab === 'recruitment' ? (
+          renderRecruitmentAdmin()
         ) : activeTab === 'products' ? (
           <div className="p-8 space-y-8">
             <div className="flex items-center justify-between">

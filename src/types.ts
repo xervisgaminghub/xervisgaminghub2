@@ -86,3 +86,34 @@ export interface Product {
   price: number;
   image: string;
 }
+
+export interface EsportsTeam {
+  id?: string;
+  name: string;
+  description: string;
+  recruitmentOpen: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface TeamApplication {
+  id?: string;
+  teamId: string;
+  teamName: string;
+  userId: string;
+  userEmail: string;
+  name: string;
+  inGameName: string;
+  uid: string;
+  idLevel: string;
+  preferredRole: string;
+  whatsAppNumber: string;
+  previousExperience: 'Yes' | 'No';
+  prevTeamName?: string;
+  prevRole?: string;
+  prevPlayDuration?: string;
+  status: 'pending' | 'approved' | 'hold' | 'rejected';
+  createdAt: any;
+  updatedAt: any;
+}
+

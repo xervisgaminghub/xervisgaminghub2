@@ -14,6 +14,7 @@ import Tournament from './pages/Tournament';
 import About from './pages/About';
 import Admin from './pages/Admin';
 import Settings from './pages/Settings';
+import JoinTeam from './pages/JoinTeam';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -92,6 +93,7 @@ function AppRoutes() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/tournament" element={<Tournament user={user} />} />
+          <Route path="/join-team" element={<JoinTeam />} />
           <Route path="/about" element={<About />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><Admin user={user!} /></ProtectedRoute>} />
