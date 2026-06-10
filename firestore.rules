@@ -34,7 +34,12 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && (
-         (request.auth.token.email != null && (request.auth.token.email.lower() == "sajewel132@gmail.com" || request.auth.token.email.lower() == "mdmasumofficial7@gmail.com")) ||
+         (request.auth.token.email != null && (
+           request.auth.token.email == "sajewel132@gmail.com" || 
+           request.auth.token.email == "mdmasumofficial7@gmail.com" ||
+           request.auth.token.email.lower() == "sajewel132@gmail.com" || 
+           request.auth.token.email.lower() == "mdmasumofficial7@gmail.com"
+         )) ||
          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin')
       );
@@ -42,7 +47,9 @@ service cloud.firestore {
 
     function isMainAdmin() {
       return isAuthenticated() && request.auth.token.email != null &&
-        (request.auth.token.email.lower() == "sajewel132@gmail.com" || 
+        (request.auth.token.email == "sajewel132@gmail.com" || 
+         request.auth.token.email == "mdmasumofficial7@gmail.com" ||
+         request.auth.token.email.lower() == "sajewel132@gmail.com" || 
          request.auth.token.email.lower() == "mdmasumofficial7@gmail.com");
     }
 
@@ -173,12 +180,28 @@ service cloud.firestore {
     }
 
     match /teamApplications/{applicationId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin() || 
+        request.auth.token.email == "sajewel132@gmail.com" || 
+        request.auth.token.email == "mdmasumofficial7@gmail.com" ||
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == "sajewel132@gmail.com" || 
+          request.auth.token.email.lower() == "mdmasumofficial7@gmail.com"
+        ))
+      );
       allow create: if isAuthenticated() && 
                     request.resource.data.userId == request.auth.uid &&
                     request.resource.data.status == 'pending' &&
                     request.resource.data.keys().hasAll(['teamId', 'teamName', 'userId', 'name', 'inGameName', 'uid', 'idLevel', 'preferredRole', 'whatsAppNumber', 'previousExperience', 'status', 'createdAt']);
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() || (
+        isAuthenticated() && request.auth.token.email != null && (
+          request.auth.token.email == "sajewel132@gmail.com" || 
+          request.auth.token.email == "mdmasumofficial7@gmail.com" ||
+          request.auth.token.email.lower() == "sajewel132@gmail.com" || 
+          request.auth.token.email.lower() == "mdmasumofficial7@gmail.com"
+        )
+      );
     }
   }
 }
