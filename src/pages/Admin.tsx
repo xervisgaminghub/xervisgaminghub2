@@ -179,16 +179,26 @@ export default function Admin({ user }: AdminProps) {
   const fetchRecruitmentData = async () => {
     setLoading(true);
     try {
-      const teamsQuery = query(collection(db, 'esportsTeams'), orderBy('createdAt', 'desc'));
-      const teamsSnap = await getDocs(teamsQuery);
-      setEsportsTeams(teamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as EsportsTeam)));
+      const teamsSnap = await getDocs(collection(db, 'esportsTeams'));
+      const fetchedTeams = teamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as EsportsTeam));
+      fetchedTeams.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+      setEsportsTeams(fetchedTeams);
 
-      const appsQuery = query(collection(db, 'teamApplications'), orderBy('createdAt', 'desc'));
-      const appsSnap = await getDocs(appsQuery);
-      setTeamApplications(appsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamApplication)));
+      const appsSnap = await getDocs(collection(db, 'teamApplications'));
+      const fetchedApps = appsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamApplication));
+      fetchedApps.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+      setTeamApplications(fetchedApps);
     } catch (error) {
       console.error("Error fetching recruitment data:", error);
-      toast.error("Failed to fetch recruitment data");
+      toast.error("Failed to fetch recruitment data: " + (error as any)?.message);
     } finally {
       setLoading(false);
     }

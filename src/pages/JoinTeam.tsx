@@ -43,9 +43,13 @@ export default function JoinTeam() {
 
   const fetchTeams = async () => {
     try {
-      const q = query(collection(db, 'esportsTeams'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
+      const snap = await getDocs(collection(db, 'esportsTeams'));
       const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as EsportsTeam));
+      fetched.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
       setTeams(fetched);
     } catch (error) {
       console.error("Error fetching esports teams:", error);
@@ -59,11 +63,16 @@ export default function JoinTeam() {
     try {
       const q = query(
         collection(db, 'teamApplications'), 
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', user.uid)
       );
       const snap = await getDocs(q);
-      setApplications(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamApplication)));
+      const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamApplication));
+      fetched.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+      setApplications(fetched);
     } catch (error) {
       console.error("Error fetching applications:", error);
     } finally {
