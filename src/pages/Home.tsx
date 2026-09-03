@@ -39,6 +39,8 @@ export default function Home({ user }: HomeProps) {
           setScrollingText(data.scrollingText);
         }
       }
+    }, (error) => {
+      console.warn("Tournament info snapshot listener error:", error);
     });
 
     return () => unsub();

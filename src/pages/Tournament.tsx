@@ -30,6 +30,8 @@ export default function Tournament({ user }: TournamentProps) {
       if (doc.exists()) {
         setGlobalScrollingText(doc.data().scrollingText || '');
       }
+    }, (error) => {
+      console.warn("Tournament settings snapshot error:", error);
     });
     return () => unsubSettings();
   }, []);
@@ -78,6 +80,8 @@ export default function Tournament({ user }: TournamentProps) {
         const myReg = allRegs.find(r => r.userId === user.uid);
         setUserRegistration(myReg || null);
       }
+    }, (error) => {
+      console.warn("Tournament registrations snapshot error:", error);
     });
 
     return () => unsubRegs();

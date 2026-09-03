@@ -24,6 +24,9 @@ export default function Leaderboard() {
       })) as UserProfile[];
       setTopUsers(users);
       setLoading(false);
+    }, (error) => {
+      console.warn("Leaderboard snapshot listener error:", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();
