@@ -2,5 +2,5 @@
   "name": "Xervis Elite Hub",
   "description": "High-performance gaming resource procurement hub and elite competitive terminal featuring automated rewards and tactical rankings.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

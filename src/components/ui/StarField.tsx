@@ -25,17 +25,17 @@ export default function StarField() {
       color: string;
     }[] = [];
 
-    const starCount = 150;
-    const colors = ['#00FF66', '#FFD700', '#ffffff', '#a855f7', '#ffffff'];
+    const starCount = 140;
+    const colors = ['#00F0FF', '#FF2A55', '#9D4EDD', '#FFB800', '#38BDF8', '#ffffff'];
 
     for (let i = 0; i < starCount; i++) {
       stars.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        size: Math.random() * 2 + 0.5,
-        speed: Math.random() * 0.3 + 0.05,
-        opacity: Math.random() * 0.8 + 0.2,
-        twinkle: Math.random() * 0.03,
+        size: Math.random() * 2 + 0.6,
+        speed: Math.random() * 0.4 + 0.08,
+        opacity: Math.random() * 0.85 + 0.15,
+        twinkle: Math.random() * 0.025,
         color: colors[Math.floor(Math.random() * colors.length)]
       });
     }
@@ -44,7 +44,7 @@ export default function StarField() {
       ctx.clearRect(0, 0, width, height);
 
       stars.forEach(star => {
-        // Drift movement (celebratory falling confetti style)
+        // Drift movement (cyber data particle drift)
         star.y += star.speed;
         if (star.y > height) {
           star.y = 0;
@@ -53,7 +53,7 @@ export default function StarField() {
 
         // Twinkle factor
         star.opacity += star.twinkle;
-        if (star.opacity > 1 || star.opacity < 0.2) {
+        if (star.opacity > 0.9 || star.opacity < 0.2) {
           star.twinkle = -star.twinkle;
         }
 
@@ -61,15 +61,14 @@ export default function StarField() {
         ctx.globalAlpha = star.opacity;
         ctx.beginPath();
         
-        // Render a bit more festive circles (confetti style)
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
         ctx.fill();
         
-        if (star.size > 1.5) {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = star.color;
-            ctx.fill();
-            ctx.shadowBlur = 0;
+        if (star.size > 1.4) {
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = star.color;
+          ctx.fill();
+          ctx.shadowBlur = 0;
         }
       });
 

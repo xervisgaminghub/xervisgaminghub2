@@ -70,9 +70,9 @@ function AppRoutes() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="min-h-screen flex flex-col relative overflow-hidden bg-cover bg-center bg-no-repeat selection:bg-cyan selection:text-dark"
       style={{
-        backgroundImage: 'linear-gradient(to bottom, rgba(3, 23, 10, 0.72) 0%, rgba(1, 8, 4, 0.96) 100%), url("https://i.postimg.cc/8CW1VW4Y/vecteezy-ai-generated-a-large-field-at-the-stadium-with-the-light-36730736.jpg")'
+        backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 60%), radial-gradient(ellipse at 85% 60%, rgba(255, 42, 85, 0.06) 0%, transparent 50%), linear-gradient(to bottom, rgba(10, 13, 20, 0.88) 0%, rgba(5, 7, 12, 0.97) 100%), url("https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070")'
       }}
     >
       <StarField />
